@@ -1,0 +1,18 @@
+
+export const mockYESFactor: YESFactorContent = {
+  title: 'THE YES FACTOR',
+  description: 'THE YES FACTOR es el concurso de canto en inglés más esperado de Neiva. Durante años, hemos brindado un espacio para que nuestros estudiantes de todas las edades demuestren su talento, pierdan el miedo escénico y practiquen su pronunciación de una forma divertida y artística.',
+  videoUrl: 'https://yes.edu.co/wp-content/uploads/2023/06/YES-Historia-2023.mp4',
+  winners: [
+    { name: 'Karen Andrea Ramos', category: 'YES FACTOR TEENS', place: '1st Place' },
+    { name: 'Ivonne Rebolledo', category: 'YES FACTOR TEENS', place: '2nd Place' },
+    { name: 'Luis Leiva', category: 'YES FACTOR TEENS', place: '3rd Place' },
+    { name: 'Julian Romero Laverde', category: 'YES FACTOR KIDS', place: '1st Place' },
+  ],
+  rulesUrl: 'https://yes.edu.co/wp-content/uploads/2023/03/DESCRIPCION-DEL-CONCURSO-DE-CANTO-EN-INGLES-YES-FACTOR.pdf',
+  registrationStatus: 'closed',
+  seo: {
+    title: 'YES Factor | Concurso de Canto en Inglés en Neiva | YES Institute',
+    description: 'Conoce THE YES FACTOR, el concurso de canto en inglés del Instituto YES. Ganadores, categorías y cómo participar en el evento más talentoso de Huila.',
+  },
+};
