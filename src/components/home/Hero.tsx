@@ -21,6 +21,11 @@ const BLUE = '#323D6E';
 export default function Hero({ hero, announcements, whatsapp }: HeroProps) {
   const shouldReduceMotion = useReducedMotion();
   const [activeAnnouncement, setActiveAnnouncement] = useState(0);
+  const [isMobile, setIsMobile] = useState(true);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+  }, []);
 
   useEffect(() => {
     if (!announcements || announcements.length <= 1) return;
@@ -62,15 +67,15 @@ export default function Hero({ hero, announcements, whatsapp }: HeroProps) {
       {!shouldReduceMotion && (
         <>
           <motion.div
-            className="absolute -z-20 -top-40 -left-40 h-[520px] w-[520px] rounded-full blur-[90px] opacity-70"
-            style={{ background: `radial-gradient(circle at 30% 30%, ${BLUE} 0%, rgba(50,61,110,0) 60%)` }}
-            animate={{ x: [0, 60, -10], y: [0, 25, 10], scale: [1, 1.08, 0.98] }}
+            className="absolute -z-20 -top-40 -left-40 h-[520px] w-[520px] rounded-full blur-[50px] sm:blur-[90px] opacity-70"
+            style={{ background: `radial-gradient(circle at 30% 30%, ${BLUE} 0%, rgba(50,61,110,0) 60%)`, willChange: 'transform' }}
+            animate={isMobile ? {} : { x: [0, 60, -10], y: [0, 25, 10], scale: [1, 1.08, 0.98] }}
             transition={{ duration: 14, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute -z-20 -bottom-48 -right-48 h-[620px] w-[620px] rounded-full blur-[110px] opacity-70"
-            style={{ background: `radial-gradient(circle at 70% 60%, ${RED} 0%, rgba(237,17,24,0) 62%)` }}
-            animate={{ x: [0, -50, 15], y: [0, -30, -10], scale: [1, 0.95, 1.06] }}
+            className="absolute -z-20 -bottom-48 -right-48 h-[620px] w-[620px] rounded-full blur-[60px] sm:blur-[110px] opacity-70"
+            style={{ background: `radial-gradient(circle at 70% 60%, ${RED} 0%, rgba(237,17,24,0) 62%)`, willChange: 'transform' }}
+            animate={isMobile ? {} : { x: [0, -50, 15], y: [0, -30, -10], scale: [1, 0.95, 1.06] }}
             transition={{ duration: 16, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
           />
         </>
@@ -87,22 +92,22 @@ export default function Hero({ hero, announcements, whatsapp }: HeroProps) {
             maskImage: 'radial-gradient(ellipse at 50% 40%, black 0%, transparent 62%)',
             WebkitMaskImage: 'radial-gradient(ellipse at 50% 40%, black 0%, transparent 62%)',
           }}
-          animate={shouldReduceMotion ? {} : { backgroundPosition: ['0px 0px', '0px 120px'] }}
+          animate={shouldReduceMotion || isMobile ? {} : { backgroundPosition: ['0px 0px', '0px 120px'] }}
           transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
         />
       </div>
 
       {/* Light sweep full width */}
-      {!shouldReduceMotion && (
+      {!shouldReduceMotion && !isMobile && (
         <motion.div
-          className="pointer-events-none absolute inset-y-0 -z-10"
+          className="pointer-events-none absolute inset-y-0 left-0 -z-10"
           style={{
-            width: '200%',
-            left: '-100%',
+            width: '100%',
+            willChange: 'transform',
             background:
               'linear-gradient(110deg, transparent 35%, rgba(237,17,24,0.15) 50%, transparent 65%)',
           }}
-          animate={{ left: ['-100%', '100%'] }}
+          animate={{ x: ['-100%', '100%'] }}
           transition={{
             duration: 6,
             repeat: Infinity,
