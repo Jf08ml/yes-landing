@@ -25,6 +25,23 @@ body {
   background-color: #ffffff;
 }
 
+/* Marquee animation for announcements */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee-scroll 22s linear infinite;
+  will-change: transform;
+  display: flex;
+  width: max-content;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

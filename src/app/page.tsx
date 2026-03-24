@@ -11,6 +11,8 @@ import FAQ from '@/components/home/FAQ';
 import CTAFinal from '@/components/home/CTAFinal';
 import YESFactorSection from '@/components/home/YESFactorSection';
 import BlogPreview from '@/components/home/BlogPreview';
+import AnnouncementsCards from '@/components/home/AnnouncementsCards';
+import AnnouncementsHeaderBar from '@/components/home/AnnouncementsHeaderBar';
 
 
 export const revalidate = 300;
@@ -33,6 +35,8 @@ export default async function HomePage() {
     fetchContactContent(),
     fetchBlogPosts(),
   ]);
+
+  console.log(home.trustBar)
 
   const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || contact.whatsapp || '573133973411';
 
@@ -68,7 +72,18 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(courseFrJsonLd) }}
       />
 
-      <Hero hero={home.hero} announcements={home.announcements} whatsapp={whatsapp} />
+      <Hero
+        hero={home.hero}
+        announcements={home.announcements}
+        displayMode={home.announcementsDisplay}
+        whatsapp={whatsapp}
+      />
+      {home.announcementsDisplay === 'header-hybrid' && home.announcements && home.announcements.length > 0 && (
+        <AnnouncementsHeaderBar items={home.announcements} />
+      )}
+      {home.announcementsDisplay === 'cards' && home.announcements && home.announcements.length > 0 && (
+        <AnnouncementsCards items={home.announcements} />
+      )}
       <TrustBar trustItems={home.trustBar} stats={home.stats} />
       <Features features={home.features} />
       <CoursesPreview courses={home.coursesPreview} />

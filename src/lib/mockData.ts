@@ -8,10 +8,23 @@ export const mockHome: HomeContent = {
     ctaText: 'Solicita tu clase demo',
     ctaWhatsappText: 'Escríbenos por WhatsApp',
   },
+  announcementsDisplay: 'ticker' as const,
   announcements: [
-    { text: '🎓 Inscripciones abiertas para el nuevo semestre', url: '/contacto' },
-    { text: '🏆 YES Factor 2025 — ¡Participa y gana!', url: '/yes-factor' },
-    { text: '📅 Nuevos horarios sabatinos disponibles', url: '/cursos' },
+    {
+      text: '🎓 Inscripciones abiertas para el nuevo semestre',
+      url: '/contacto',
+      imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&q=80',
+    },
+    {
+      text: '🏆 YES Factor 2025 — ¡Participa y gana!',
+      url: '/yes-factor',
+      imageUrl: 'https://images.unsplash.com/photo-1546519638405-a9d1b634a69f?w=400&q=80',
+    },
+    {
+      text: '📅 Nuevos horarios sabatinos disponibles',
+      url: '/cursos',
+      imageUrl: 'https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&q=80',
+    },
   ],
   stats: [
     { value: '32+', label: 'Años de experiencia' },

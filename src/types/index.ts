@@ -39,9 +39,18 @@ export interface FAQItem {
   answer: string;
 }
 
+export type AnnouncementsDisplay = 'ticker' | 'ticker-image' | 'marquee' | 'cards' | 'header-hybrid' | 'hero-split';
+
+export interface Announcement {
+  text: string;
+  url?: string;
+  imageUrl?: string;
+}
+
 export interface HomeContent {
   hero: HeroContent;
-  announcements?: { text: string; url?: string }[];
+  announcements?: Announcement[];
+  announcementsDisplay?: AnnouncementsDisplay;
   stats: Stat[];
   trustBar: string[];
   features: Feature[];

@@ -11,13 +11,13 @@ import {
 import { doc, getDoc, updateDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import Image from 'next/image';
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase';
-import type { 
-  HomeContent, 
-  CoursesContent, 
-  ContactContent, 
-  YESFactorContent, 
-  BlogPost, 
-  BlogContent 
+import type {
+  HomeContent,
+  CoursesContent,
+  ContactContent,
+  YESFactorContent,
+  BlogPost,
+  BlogContent,
 } from '@/types';
 import { 
   mockHome, 
@@ -269,38 +269,79 @@ export default function AdminPage() {
         {/* Home editor */}
         {activeTab === 'home' && home && (
           <div className="space-y-6">
-            <EditorSection title={`Ticker de noticias (${(home.announcements ?? []).length})`}>
-              {(home.announcements ?? []).map((item, i) => (
-                <div key={i} className="flex gap-2 items-start bg-surface rounded-lg p-3">
-                  <div className="flex-1 space-y-2">
-                    <Field
-                      label="Texto del anuncio"
-                      value={item.text}
-                      onChange={(v) => {
-                        const announcements = [...(home.announcements ?? [])];
-                        announcements[i] = { ...item, text: v };
-                        setHome({ ...home, announcements });
-                      }}
-                    />
-                    <Field
-                      label="URL al hacer clic (opcional, ej: /cursos o https://...)"
-                      value={item.url ?? ''}
-                      onChange={(v) => {
-                        const announcements = [...(home.announcements ?? [])];
-                        announcements[i] = { ...item, url: v || undefined };
-                        setHome({ ...home, announcements });
-                      }}
-                    />
-                  </div>
-                  <button
-                    onClick={() => {
-                      const announcements = (home.announcements ?? []).filter((_, j) => j !== i);
-                      setHome({ ...home, announcements });
-                    }}
-                    className="text-red-400 hover:text-red-600 text-xs mt-2"
-                  >✕</button>
+            <EditorSection title={`Noticias (${(home.announcements ?? []).length})`}>
+              {/* Selector de modo de visualización */}
+              <div>
+                <label className="block text-xs font-medium text-text-light mb-2">Modo de visualización</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {([
+                    { value: 'ticker',        label: 'Ticker',             desc: '1 noticia a la vez, rota automáticamente' },
+                    { value: 'ticker-image',  label: 'Ticker + imagen',    desc: 'Ticker con thumbnail por noticia' },
+                    { value: 'marquee',       label: 'Ticker horizontal',  desc: 'Todas las noticias desfilando de derecha a izquierda' },
+                    { value: 'cards',         label: 'Cards',              desc: 'Tarjetas con imagen debajo del hero' },
+                    { value: 'header-hybrid', label: 'Header híbrido',     desc: 'Barra de noticias sticky bajo el nav' },
+                    { value: 'hero-split',    label: 'Hero partido',       desc: 'Presentación + carrusel de noticias en 2 columnas' },
+                  ] as const).map((mode) => (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      onClick={() => setHome({ ...home, announcementsDisplay: mode.value })}
+                      className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-colors ${
+                        (home.announcementsDisplay ?? 'ticker') === mode.value
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-gray-200 text-text-light hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="font-semibold block">{mode.label}</span>
+                      <span className="text-[11px] opacity-70">{mode.desc}</span>
+                    </button>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Lista de anuncios */}
+              <div className="space-y-3">
+                {(home.announcements ?? []).map((item, i) => (
+                  <div key={i} className="flex gap-2 items-start bg-surface rounded-lg p-3">
+                    <div className="flex-1 space-y-2">
+                      <Field
+                        label="Texto del anuncio"
+                        value={item.text}
+                        onChange={(v) => {
+                          const announcements = [...(home.announcements ?? [])];
+                          announcements[i] = { ...item, text: v };
+                          setHome({ ...home, announcements });
+                        }}
+                      />
+                      <Field
+                        label="URL al hacer clic (opcional, ej: /cursos o https://...)"
+                        value={item.url ?? ''}
+                        onChange={(v) => {
+                          const announcements = [...(home.announcements ?? [])];
+                          announcements[i] = { ...item, url: v || undefined };
+                          setHome({ ...home, announcements });
+                        }}
+                      />
+                      <Field
+                        label="URL de imagen (opcional — para modos ticker-image y cards)"
+                        value={item.imageUrl ?? ''}
+                        onChange={(v) => {
+                          const announcements = [...(home.announcements ?? [])];
+                          announcements[i] = { ...item, imageUrl: v || undefined };
+                          setHome({ ...home, announcements });
+                        }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        const announcements = (home.announcements ?? []).filter((_, j) => j !== i);
+                        setHome({ ...home, announcements });
+                      }}
+                      className="text-red-400 hover:text-red-600 text-xs mt-2"
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
               <button
                 onClick={() => setHome({ ...home, announcements: [...(home.announcements ?? []), { text: '', url: '' }] })}
                 className="text-primary text-sm font-medium hover:underline"
