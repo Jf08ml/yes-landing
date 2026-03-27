@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { fetchBlogPosts, fetchBlogContent } from '@/lib/content';
+import { fetchBlogPosts, fetchNoticias, fetchBlogContent } from '@/lib/content';
 import Section from '@/components/ui/Section';
 
 export const revalidate = 300;
@@ -15,85 +15,151 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function BlogPage() {
-  const [posts, content] = await Promise.all([
+  const [blogs, noticias, content] = await Promise.all([
     fetchBlogPosts(),
+    fetchNoticias(),
     fetchBlogContent(),
   ]);
 
   return (
-    <div className="pt-20">
+    <div>
       {/* Hero */}
-      <div className="bg-surface border-b border-gray-100 py-16 sm:py-24 px-4 overflow-hidden relative">
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h1 className="text-4xl sm:text-6xl font-black text-text mb-6">
-            {content.title}
+      <div className="bg-gradient-to-br from-primary to-primary-dark py-16 sm:py-20 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
+            Blog &amp; Noticias
           </h1>
-          <p className="text-text-light text-lg sm:text-xl max-w-2xl mx-auto">
+          <p className="text-blue-100 text-lg max-w-2xl mx-auto">
             {content.description}
           </p>
         </div>
-        {/* Decor */}
-        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-64 h-64 bg-secondary/5 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      <Section className="bg-white">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
-          {posts.map((post) => (
-            <article key={post.id} className="group flex flex-col bg-white">
-              <Link href={`/blog/${post.slug}`} className="block aspect-[16/9] relative rounded-3xl overflow-hidden mb-6 shadow-md shadow-primary/5">
-                {post.coverImage ? (
-                  <Image
-                    src={post.coverImage}
-                    alt={post.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-surface flex items-center justify-center text-primary text-4xl">
-                    📝
-                  </div>
-                )}
-                <div className="absolute top-4 left-4">
-                  <span className="bg-white text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg">
-                    {post.category}
-                  </span>
-                </div>
-              </Link>
+      {/* ── Noticias ── */}
+      {noticias.length > 0 && (
+        <Section>
+          <div className="mb-8 flex items-center gap-3">
+            <span className="inline-block w-1 h-6 rounded-full" style={{ background: '#ED1118' }} />
+            <h2 className="text-2xl font-bold text-text">Noticias</h2>
+            <span className="text-sm text-text-light">{noticias.length} publicada{noticias.length !== 1 ? 's' : ''}</span>
+          </div>
 
-              <div className="flex flex-col flex-1 pl-2">
-                <time className="text-xs text-text-light mb-2 font-medium">
-                  {new Date(post.date).toLocaleDateString('es-ES', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                </time>
-                <h2 className="text-xl sm:text-2xl font-bold text-text mb-3 line-clamp-2 group-hover:text-primary transition-colors leading-tight">
-                  <Link href={`/blog/${post.slug}`}>
-                    {post.title}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {noticias.map((noticia, i) => (
+              <article
+                key={noticia.id}
+                className={`group relative flex flex-col rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 bg-white ${i === 0 ? 'md:col-span-2 lg:col-span-1' : ''}`}
+              >
+                {noticia.coverImage && (
+                  <Link href={`/blog/${noticia.slug}`} className="block aspect-[16/9] relative overflow-hidden">
+                    <Image
+                      src={noticia.coverImage}
+                      alt={noticia.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                   </Link>
-                </h2>
-                <p className="text-text-light text-sm sm:text-base line-clamp-3 mb-6 flex-1">
-                  {post.excerpt}
-                </p>
-                <Link
-                  href={`/blog/${post.slug}`}
-                  className="text-sm font-bold text-primary flex items-center gap-1 group/link"
-                >
-                  Leer artículo completo
-                  <span className="group-hover/link:translate-x-1 transition-transform">→</span>
-                </Link>
-              </div>
-            </article>
-          ))}
+                )}
+                <div className="p-5 flex flex-col flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-white"
+                      style={{ background: '#ED1118' }}
+                    >
+                      Noticia
+                    </span>
+                    {noticia.category && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-text-light">
+                        {noticia.category}
+                      </span>
+                    )}
+                    {noticia.expiresAt && (
+                      <span className="ml-auto text-[10px] text-text-light">
+                        Hasta {new Date(noticia.expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                      </span>
+                    )}
+                  </div>
+                  <Link href={`/blog/${noticia.slug}`}>
+                    <h3 className="font-bold text-text text-base leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                      {noticia.title}
+                    </h3>
+                  </Link>
+                  <p className="text-text-light text-sm line-clamp-2 flex-1 mb-4">
+                    {noticia.excerpt}
+                  </p>
+                  <Link
+                    href={`/blog/${noticia.slug}`}
+                    className="text-sm font-bold text-primary flex items-center gap-1 group/link"
+                  >
+                    Ver noticia
+                    <span className="group-hover/link:translate-x-1 transition-transform">→</span>
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* ── Blog ── */}
+      <Section className={noticias.length > 0 ? 'bg-surface' : 'bg-white'}>
+        <div className="mb-8 flex items-center gap-3">
+          <span className="inline-block w-1 h-6 rounded-full bg-primary" />
+          <h2 className="text-2xl font-bold text-text">Blog</h2>
+          <span className="text-sm text-text-light">{blogs.length} artículo{blogs.length !== 1 ? 's' : ''}</span>
         </div>
 
-        {posts.length === 0 && (
-          <div className="text-center py-24">
-            <span className="text-6xl mb-6 block">📭</span>
-            <h3 className="text-xl font-bold text-text">Próximamente más artículos</h3>
-            <p className="text-text-light">Estamos preparando nuevo contenido para ti.</p>
+        {blogs.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {blogs.map((post) => (
+              <article key={post.id} className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300">
+                <Link href={`/blog/${post.slug}`} className="block aspect-[16/9] relative overflow-hidden">
+                  {post.coverImage ? (
+                    <Image
+                      src={post.coverImage}
+                      alt={post.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-surface flex items-center justify-center text-primary text-4xl">
+                      📝
+                    </div>
+                  )}
+                  <div className="absolute top-3 left-3">
+                    <span className="bg-white text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow">
+                      {post.category}
+                    </span>
+                  </div>
+                </Link>
+                <div className="p-5 flex flex-col flex-1">
+                  <time className="text-xs text-text-light mb-2 font-medium">
+                    {new Date(post.date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </time>
+                  <Link href={`/blog/${post.slug}`}>
+                    <h3 className="font-bold text-text text-lg leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                      {post.title}
+                    </h3>
+                  </Link>
+                  <p className="text-text-light text-sm line-clamp-3 flex-1 mb-4">
+                    {post.excerpt}
+                  </p>
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    className="text-sm font-bold text-primary flex items-center gap-1 group/link"
+                  >
+                    Leer artículo
+                    <span className="group-hover/link:translate-x-1 transition-transform">→</span>
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <span className="text-5xl mb-4 block">📭</span>
+            <p className="text-text-light">Próximamente más artículos.</p>
           </div>
         )}
       </Section>

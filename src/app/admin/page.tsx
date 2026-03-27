@@ -8,9 +8,11 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
-import { doc, getDoc, updateDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import Image from 'next/image';
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase';
+import ImageUploader from '@/components/admin/ImageUploader';
+import RichTextEditor from '@/components/admin/RichTextEditor';
 import type {
   HomeContent,
   CoursesContent,
@@ -269,85 +271,9 @@ export default function AdminPage() {
         {/* Home editor */}
         {activeTab === 'home' && home && (
           <div className="space-y-6">
-            <EditorSection title={`Noticias (${(home.announcements ?? []).length})`}>
-              {/* Selector de modo de visualización */}
-              <div>
-                <label className="block text-xs font-medium text-text-light mb-2">Modo de visualización</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {([
-                    { value: 'ticker',        label: 'Ticker',             desc: '1 noticia a la vez, rota automáticamente' },
-                    { value: 'ticker-image',  label: 'Ticker + imagen',    desc: 'Ticker con thumbnail por noticia' },
-                    { value: 'marquee',       label: 'Ticker horizontal',  desc: 'Todas las noticias desfilando de derecha a izquierda' },
-                    { value: 'cards',         label: 'Cards',              desc: 'Tarjetas con imagen debajo del hero' },
-                    { value: 'header-hybrid', label: 'Header híbrido',     desc: 'Barra de noticias sticky bajo el nav' },
-                    { value: 'hero-split',    label: 'Hero partido',       desc: 'Presentación + carrusel de noticias en 2 columnas' },
-                  ] as const).map((mode) => (
-                    <button
-                      key={mode.value}
-                      type="button"
-                      onClick={() => setHome({ ...home, announcementsDisplay: mode.value })}
-                      className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-colors ${
-                        (home.announcementsDisplay ?? 'ticker') === mode.value
-                          ? 'border-primary bg-primary/5 text-primary'
-                          : 'border-gray-200 text-text-light hover:border-gray-300'
-                      }`}
-                    >
-                      <span className="font-semibold block">{mode.label}</span>
-                      <span className="text-[11px] opacity-70">{mode.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Lista de anuncios */}
-              <div className="space-y-3">
-                {(home.announcements ?? []).map((item, i) => (
-                  <div key={i} className="flex gap-2 items-start bg-surface rounded-lg p-3">
-                    <div className="flex-1 space-y-2">
-                      <Field
-                        label="Texto del anuncio"
-                        value={item.text}
-                        onChange={(v) => {
-                          const announcements = [...(home.announcements ?? [])];
-                          announcements[i] = { ...item, text: v };
-                          setHome({ ...home, announcements });
-                        }}
-                      />
-                      <Field
-                        label="URL al hacer clic (opcional, ej: /cursos o https://...)"
-                        value={item.url ?? ''}
-                        onChange={(v) => {
-                          const announcements = [...(home.announcements ?? [])];
-                          announcements[i] = { ...item, url: v || undefined };
-                          setHome({ ...home, announcements });
-                        }}
-                      />
-                      <Field
-                        label="URL de imagen (opcional — para modos ticker-image y cards)"
-                        value={item.imageUrl ?? ''}
-                        onChange={(v) => {
-                          const announcements = [...(home.announcements ?? [])];
-                          announcements[i] = { ...item, imageUrl: v || undefined };
-                          setHome({ ...home, announcements });
-                        }}
-                      />
-                    </div>
-                    <button
-                      onClick={() => {
-                        const announcements = (home.announcements ?? []).filter((_, j) => j !== i);
-                        setHome({ ...home, announcements });
-                      }}
-                      className="text-red-400 hover:text-red-600 text-xs mt-2"
-                    >✕</button>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => setHome({ ...home, announcements: [...(home.announcements ?? []), { text: '', url: '' }] })}
-                className="text-primary text-sm font-medium hover:underline"
-              >
-                + Agregar anuncio
-              </button>
+            <EditorSection title="SEO (metadatos de la página)">
+              <Field label="Título SEO" value={home.seo.title} onChange={(v) => setHome({ ...home, seo: { ...home.seo, title: v } })} />
+              <Field label="Descripción SEO" value={home.seo.description} onChange={(v) => setHome({ ...home, seo: { ...home.seo, description: v } })} textarea />
             </EditorSection>
 
             <EditorSection title="Hero">
@@ -355,6 +281,45 @@ export default function AdminPage() {
               <Field label="Subtítulo" value={home.hero.subtitle} onChange={(v) => setHome({ ...home, hero: { ...home.hero, subtitle: v } })} textarea />
               <Field label="CTA texto" value={home.hero.ctaText} onChange={(v) => setHome({ ...home, hero: { ...home.hero, ctaText: v } })} />
               <Field label="CTA WhatsApp texto" value={home.hero.ctaWhatsappText} onChange={(v) => setHome({ ...home, hero: { ...home.hero, ctaWhatsappText: v } })} />
+            </EditorSection>
+
+            <EditorSection title={`Stats (${home.stats.length})`}>
+              {home.stats.map((s, i) => (
+                <div key={i} className="flex gap-2 items-start bg-surface rounded-lg p-3">
+                  <div className="flex-1 grid grid-cols-2 gap-2">
+                    <Field label="Valor (ej: 32+)" value={s.value} onChange={(v) => {
+                      const stats = [...home.stats]; stats[i] = { ...s, value: v }; setHome({ ...home, stats });
+                    }} />
+                    <Field label="Etiqueta (ej: Años)" value={s.label} onChange={(v) => {
+                      const stats = [...home.stats]; stats[i] = { ...s, label: v }; setHome({ ...home, stats });
+                    }} />
+                  </div>
+                  <button onClick={() => setHome({ ...home, stats: home.stats.filter((_, j) => j !== i) })} className="text-red-400 hover:text-red-600 text-xs mt-2">✕</button>
+                </div>
+              ))}
+              <button onClick={() => setHome({ ...home, stats: [...home.stats, { value: '', label: '' }] })} className="text-primary text-sm font-medium hover:underline">
+                + Agregar stat
+              </button>
+            </EditorSection>
+
+            <EditorSection title={`Trust Bar (${home.trustBar.length})`}>
+              <p className="text-xs text-text-light mb-2">Píldoras de texto en el banner de confianza bajo el hero.</p>
+              {home.trustBar.map((item, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={item}
+                    onChange={(e) => {
+                      const trustBar = [...home.trustBar]; trustBar[i] = e.target.value; setHome({ ...home, trustBar });
+                    }}
+                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm"
+                  />
+                  <button onClick={() => setHome({ ...home, trustBar: home.trustBar.filter((_, j) => j !== i) })} className="text-red-400 hover:text-red-600 text-xs px-1">✕</button>
+                </div>
+              ))}
+              <button onClick={() => setHome({ ...home, trustBar: [...home.trustBar, ''] })} className="text-primary text-sm font-medium hover:underline">
+                + Agregar ítem
+              </button>
             </EditorSection>
 
             <EditorSection title="CTA Final">
@@ -494,6 +459,7 @@ export default function AdminPage() {
           <div className="space-y-6">
             <EditorSection title="Datos de contacto">
               <Field label="WhatsApp" value={contact.whatsapp} onChange={(v) => setContact({ ...contact, whatsapp: v })} />
+              <Field label="URL Pagos en línea" value={contact.paymentsUrl || ''} onChange={(v) => setContact({ ...contact, paymentsUrl: v })} />
               <Field label="Teléfono" value={contact.phone} onChange={(v) => setContact({ ...contact, phone: v })} />
               <Field label="Email" value={contact.email} onChange={(v) => setContact({ ...contact, email: v })} />
               <Field label="Dirección" value={contact.address} onChange={(v) => setContact({ ...contact, address: v })} />
@@ -506,17 +472,45 @@ export default function AdminPage() {
               {contact.social.map((s, i) => (
                 <div key={i} className="flex gap-2 items-start bg-surface rounded-lg p-3">
                   <div className="flex-1 space-y-2">
-                    <Field label="Plataforma" value={s.platform} onChange={(v) => {
-                      const social = [...contact.social]; social[i] = { ...s, platform: v };
-                      setContact({ ...contact, social });
-                    }} />
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-text-light">Plataforma</label>
+                      <select
+                        value={s.platform}
+                        onChange={(e) => {
+                          const labels: Record<string, string> = { facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube' };
+                          const social = [...contact.social];
+                          social[i] = { ...s, platform: e.target.value, label: labels[e.target.value] || e.target.value };
+                          setContact({ ...contact, social });
+                        }}
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm bg-white"
+                      >
+                        <option value="facebook">Facebook</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="tiktok">TikTok</option>
+                        <option value="youtube">YouTube</option>
+                      </select>
+                    </div>
                     <Field label="URL" value={s.url} onChange={(v) => {
                       const social = [...contact.social]; social[i] = { ...s, url: v };
                       setContact({ ...contact, social });
                     }} />
                   </div>
+                  <button
+                    onClick={() => {
+                      const social = contact.social.filter((_, idx) => idx !== i);
+                      setContact({ ...contact, social });
+                    }}
+                    className="mt-6 text-red-400 hover:text-red-600 text-lg font-bold px-1"
+                    title="Eliminar"
+                  >×</button>
                 </div>
               ))}
+              <button
+                onClick={() => setContact({ ...contact, social: [...contact.social, { platform: 'instagram', label: 'Instagram', url: '' }] })}
+                className="text-sm text-primary font-semibold hover:underline"
+              >
+                + Añadir red social
+              </button>
             </EditorSection>
           </div>
         )}
@@ -576,96 +570,238 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Blog editor */}
+        {/* Blog & Noticias editor */}
         {activeTab === 'blog' && blogContent && (
           <div className="space-y-6">
-            <EditorSection title="Metadatos del Blog">
+            <EditorSection title="Metadatos de la página">
               <Field label="Título de página" value={blogContent.title} onChange={(v) => setBlogContent({ ...blogContent, title: v })} />
               <Field label="Descripción de página" value={blogContent.description} onChange={(v) => setBlogContent({ ...blogContent, description: v })} textarea />
             </EditorSection>
-            
+
             <div className="flex justify-between items-center px-2">
-              <h3 className="font-bold text-text uppercase tracking-wider text-sm">Artículos ({blogPosts.length})</h3>
-              <button 
-                onClick={async () => {
-                  if (!db) return;
-                  const newPost: BlogPost = {
-                    id: Date.now().toString(),
-                    slug: `nuevo-articulo-${Date.now()}`,
-                    title: 'Nuevo Artículo',
-                    excerpt: 'Breve resumen del artículo...',
-                    content: '# Contenido del artículo\n\nEscribe aquí usando Markdown.',
-                    date: new Date().toISOString().split('T')[0],
-                    author: 'Admin YES',
-                    category: 'General',
-                    published: false,
-                  };
-                  await setDoc(doc(db, 'blogPosts', newPost.id), newPost);
-                  setBlogPosts([newPost, ...blogPosts]);
-                }}
-                className="bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary-dark transition-colors"
-              >
-                + Nuevo Artículo
-              </button>
+              <h3 className="font-bold text-text uppercase tracking-wider text-sm">
+                Entradas ({blogPosts.length})
+                <span className="ml-2 text-text-light font-normal normal-case tracking-normal">
+                  — {blogPosts.filter(p => p.type === 'noticia').length} noticias · {blogPosts.filter(p => p.type === 'blog').length} blogs
+                </span>
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    if (!db) return;
+                    const newPost: BlogPost = {
+                      id: Date.now().toString(),
+                      slug: `nueva-noticia-${Date.now()}`,
+                      title: 'Nueva Noticia',
+                      excerpt: 'Resumen de la noticia...',
+                      content: '# Nueva Noticia\n\nEscribe aquí el contenido.',
+                      date: new Date().toISOString().split('T')[0],
+                      author: 'Admin YES',
+                      category: 'Institucional',
+                      published: false,
+                      type: 'noticia',
+                    };
+                    await setDoc(doc(db, 'blogPosts', newPost.id), newPost);
+                    setBlogPosts([newPost, ...blogPosts]);
+                  }}
+                  className="text-xs font-bold px-3 py-1.5 rounded-lg border-2 transition-colors"
+                  style={{ borderColor: '#ED1118', color: '#ED1118' }}
+                >
+                  + Noticia
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!db) return;
+                    const newPost: BlogPost = {
+                      id: Date.now().toString(),
+                      slug: `nuevo-articulo-${Date.now()}`,
+                      title: 'Nuevo Artículo',
+                      excerpt: 'Breve resumen del artículo...',
+                      content: '# Contenido del artículo\n\nEscribe aquí usando Markdown.',
+                      date: new Date().toISOString().split('T')[0],
+                      author: 'Admin YES',
+                      category: 'General',
+                      published: false,
+                      type: 'blog',
+                    };
+                    await setDoc(doc(db, 'blogPosts', newPost.id), newPost);
+                    setBlogPosts([newPost, ...blogPosts]);
+                  }}
+                  className="bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary-dark transition-colors"
+                >
+                  + Blog
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
-              {blogPosts.map((post, i) => (
-                <div key={post.id} className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
-                  <div className="flex justify-between items-start">
+              {blogPosts.map((post, i) => {
+                const isNoticia = post.type === 'noticia';
+                const isExpired = post.expiresAt ? new Date(post.expiresAt) < new Date() : false;
+                return (
+                  <div key={post.id} className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+                    {/* Header: tipo + estado */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span
+                        className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full text-white"
+                        style={{ background: isNoticia ? '#ED1118' : '#323D6E' }}
+                      >
+                        {isNoticia ? 'Noticia' : 'Blog'}
+                      </span>
+                      {post.published && !isExpired && <span className="text-[10px] text-green-600 font-semibold">● Publicado</span>}
+                      {post.published && isExpired && <span className="text-[10px] text-orange-500 font-semibold">● Expirado</span>}
+                      {!post.published && <span className="text-[10px] text-gray-400 font-semibold">● Borrador</span>}
+
+                      {/* Toggle tipo */}
+                      <button
+                        onClick={async () => {
+                          const newType = isNoticia ? 'blog' : 'noticia';
+                          const posts = [...blogPosts]; posts[i] = { ...post, type: newType }; setBlogPosts(posts);
+                          if (db) await updateDoc(doc(db, 'blogPosts', post.id), { type: newType });
+                        }}
+                        className="ml-auto text-[10px] text-text-light hover:text-text underline"
+                      >
+                        Cambiar a {isNoticia ? 'Blog' : 'Noticia'}
+                      </button>
+                      <button onClick={async () => {
+                        if (!db || !confirm('¿Eliminar esta entrada?')) return;
+                        await deleteDoc(doc(db, 'blogPosts', post.id));
+                        setBlogPosts(blogPosts.filter(p => p.id !== post.id));
+                      }} className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                    </div>
+
                     <Field label="Título" value={post.title} onChange={async (v) => {
                       const posts = [...blogPosts];
                       posts[i] = { ...post, title: v, slug: v.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') };
                       setBlogPosts(posts);
                       if (db) await updateDoc(doc(db, 'blogPosts', post.id), { title: v, slug: posts[i].slug });
                     }} />
-                    <button onClick={async () => {
-                      if (!db || !confirm('¿Eliminar artículo?')) return;
-                      // Logic to delete from Firestore would go here
-                      setBlogPosts(blogPosts.filter(p => p.id !== post.id));
-                    }} className="text-red-400 hover:text-red-600 text-xs mt-6 ml-4">✕</button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Categoría" value={post.category} onChange={async (v) => {
-                      const posts = [...blogPosts]; posts[i] = { ...post, category: v }; setBlogPosts(posts);
-                      if (db) await updateDoc(doc(db, 'blogPosts', post.id), { category: v });
-                    }} />
-                    <Field label="Fecha" value={post.date} onChange={async (v) => {
-                      const posts = [...blogPosts]; posts[i] = { ...post, date: v }; setBlogPosts(posts);
-                      if (db) await updateDoc(doc(db, 'blogPosts', post.id), { date: v });
-                    }} />
-                  </div>
 
-                  <Field label="Imagen URL" value={post.coverImage || ''} onChange={async (v) => {
-                    const posts = [...blogPosts]; posts[i] = { ...post, coverImage: v }; setBlogPosts(posts);
-                    if (db) await updateDoc(doc(db, 'blogPosts', post.id), { coverImage: v });
-                  }} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Field label="Categoría" value={post.category} onChange={async (v) => {
+                        const posts = [...blogPosts]; posts[i] = { ...post, category: v }; setBlogPosts(posts);
+                        if (db) await updateDoc(doc(db, 'blogPosts', post.id), { category: v });
+                      }} />
+                      <Field label="Fecha de publicación" value={post.date} onChange={async (v) => {
+                        const posts = [...blogPosts]; posts[i] = { ...post, date: v }; setBlogPosts(posts);
+                        if (db) await updateDoc(doc(db, 'blogPosts', post.id), { date: v });
+                      }} />
+                    </div>
 
-                  <Field label="Resumen" value={post.excerpt} onChange={async (v) => {
-                    const posts = [...blogPosts]; posts[i] = { ...post, excerpt: v }; setBlogPosts(posts);
-                    if (db) await updateDoc(doc(db, 'blogPosts', post.id), { excerpt: v });
-                  }} textarea />
+                    {isNoticia && (
+                      <div>
+                        <label className="block text-xs font-medium text-text-light mb-1">
+                          Fecha de expiración <span className="text-text-light font-normal">(opcional — se deja de mostrar en el hero al vencer)</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={post.expiresAt || ''}
+                          onChange={async (e) => {
+                            const val = e.target.value || undefined;
+                            const posts = [...blogPosts]; posts[i] = { ...post, expiresAt: val }; setBlogPosts(posts);
+                            if (db) await updateDoc(doc(db, 'blogPosts', post.id), { expiresAt: val ?? null });
+                          }}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm"
+                        />
+                        {isExpired && (
+                          <p className="text-xs text-orange-500 mt-1">Esta noticia ha expirado y no se muestra en el sitio.</p>
+                        )}
+                      </div>
+                    )}
 
-                  <Field label="Contenido (Markdown)" value={post.content} onChange={async (v) => {
-                    const posts = [...blogPosts]; posts[i] = { ...post, content: v }; setBlogPosts(posts);
-                    if (db) await updateDoc(doc(db, 'blogPosts', post.id), { content: v });
-                  }} textarea />
+                    {/* Portada: toggle imagen / video */}
+                    <div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-xs font-medium text-text-light">Portada</span>
+                        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+                          {(['image', 'video'] as const).map((t) => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={async () => {
+                                const posts = [...blogPosts]; posts[i] = { ...post, coverType: t }; setBlogPosts(posts);
+                                if (db) await updateDoc(doc(db, 'blogPosts', post.id), { coverType: t });
+                              }}
+                              className={`px-3 py-1 transition-colors ${(post.coverType ?? 'image') === t ? 'bg-primary text-white' : 'text-text-light hover:bg-gray-50'}`}
+                            >
+                              {t === 'image' ? '🖼 Imagen' : '▶ Video'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="checkbox" 
-                      id={`pub-${post.id}`} 
-                      checked={post.published} 
-                      onChange={async (e) => {
-                        const posts = [...blogPosts]; posts[i] = { ...post, published: e.target.checked }; setBlogPosts(posts);
-                        if (db) await updateDoc(doc(db, 'blogPosts', post.id), { published: e.target.checked });
+                      {(post.coverType ?? 'image') === 'image' ? (
+                        <ImageUploader
+                          label=""
+                          value={post.coverImage || ''}
+                          storagePath="blog-images"
+                          recommendedSize="1280 × 720 px (16:9)"
+                          onChange={async (v) => {
+                            const posts = [...blogPosts]; posts[i] = { ...post, coverImage: v }; setBlogPosts(posts);
+                            if (db) await updateDoc(doc(db, 'blogPosts', post.id), { coverImage: v });
+                          }}
+                        />
+                      ) : (
+                        <div className="space-y-2">
+                          <input
+                            type="url"
+                            value={post.coverVideo || ''}
+                            onChange={async (e) => {
+                              const v = e.target.value;
+                              const posts = [...blogPosts]; posts[i] = { ...post, coverVideo: v }; setBlogPosts(posts);
+                              if (db) await updateDoc(doc(db, 'blogPosts', post.id), { coverVideo: v });
+                            }}
+                            placeholder="https://www.youtube.com/watch?v=... o URL directa de video"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm"
+                          />
+                          {post.coverVideo && (
+                            <div className="aspect-[16/9] rounded-xl overflow-hidden bg-black">
+                              <iframe
+                                src={post.coverVideo.includes('youtube.com/watch')
+                                  ? `https://www.youtube.com/embed/${new URLSearchParams(post.coverVideo.split('?')[1]).get('v')}`
+                                  : post.coverVideo.includes('youtu.be')
+                                    ? `https://www.youtube.com/embed/${post.coverVideo.split('/').pop()}`
+                                    : post.coverVideo}
+                                className="w-full h-full"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              />
+                            </div>
+                          )}
+                          <p className="text-[10px] text-text-light">Soporta YouTube, Vimeo o URL directa de video (.mp4)</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <Field label="Resumen" value={post.excerpt} onChange={async (v) => {
+                      const posts = [...blogPosts]; posts[i] = { ...post, excerpt: v }; setBlogPosts(posts);
+                      if (db) await updateDoc(doc(db, 'blogPosts', post.id), { excerpt: v });
+                    }} textarea />
+
+                    <RichTextEditor
+                      label="Contenido"
+                      value={post.content}
+                      onChange={async (v) => {
+                        const posts = [...blogPosts]; posts[i] = { ...post, content: v }; setBlogPosts(posts);
+                        if (db) await updateDoc(doc(db, 'blogPosts', post.id), { content: v });
                       }}
                     />
-                    <label htmlFor={`pub-${post.id}`} className="text-xs font-medium text-text-light">Publicado</label>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="checkbox"
+                        id={`pub-${post.id}`}
+                        checked={post.published}
+                        onChange={async (e) => {
+                          const posts = [...blogPosts]; posts[i] = { ...post, published: e.target.checked }; setBlogPosts(posts);
+                          if (db) await updateDoc(doc(db, 'blogPosts', post.id), { published: e.target.checked });
+                        }}
+                      />
+                      <label htmlFor={`pub-${post.id}`} className="text-xs font-medium text-text-light">Publicado</label>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

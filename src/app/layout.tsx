@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import WhatsAppFloat from '@/components/ui/WhatsAppFloat';
 import { buildOrganizationJsonLd } from '@/lib/seo';
+import { fetchContactContent } from '@/lib/content';
 import './globals.css';
 
 const inter = Inter({
@@ -67,12 +69,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const jsonLd = buildOrganizationJsonLd();
+  const contact = await fetchContactContent();
 
   return (
     <html lang="es" className={inter.variable}>
@@ -83,9 +86,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col antialiased">
-        <Header />
+        <Header paymentsUrl={contact.paymentsUrl} social={contact.social} />
         <main className="flex-1">{children}</main>
         <Footer />
+        <WhatsAppFloat whatsapp={contact.whatsapp} />
       </body>
     </html>
   );

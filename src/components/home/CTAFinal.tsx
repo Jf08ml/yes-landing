@@ -30,18 +30,18 @@ export default function CTAFinal({ title, subtitle, ctaText, whatsapp }: CTAFina
           <p className="text-blue-100 text-lg mb-10 max-w-2xl mx-auto">{subtitle}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="/contacto"
-              className="inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary-dark text-surface-dark font-bold px-8 py-4 rounded-xl text-lg transition-all hover:scale-105 shadow-lg"
-            >
-              📞 {ctaText}
-            </a>
-            <a
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-4 rounded-xl text-lg transition-all hover:scale-105 shadow-lg"
+              className="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-10 py-4 rounded-xl text-xl transition-all hover:scale-105 shadow-xl"
             >
               💬 Escríbenos por WhatsApp
+            </a>
+            <a
+              href="/contacto"
+              className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-4 rounded-xl text-lg transition-all hover:scale-105 border border-white/30"
+            >
+              📍 {ctaText}
             </a>
           </div>
         </motion.div>

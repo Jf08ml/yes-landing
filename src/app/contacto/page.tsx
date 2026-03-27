@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { fetchContactContent } from '@/lib/content';
-import LeadForm from '@/components/forms/LeadForm';
 import Section from '@/components/ui/Section';
 
 export const revalidate = 300;
@@ -38,13 +37,7 @@ export default async function ContactPage() {
       </div>
 
       <Section>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Form */}
-          <div>
-            <h2 className="text-2xl font-bold text-text mb-6">Déjanos un mensaje</h2>
-            <LeadForm sourcePage="contacto" />
-          </div>
-
+        <div className="max-w-2xl mx-auto">
           {/* Contact info */}
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-text mb-6">Información de contacto</h2>
@@ -98,9 +91,9 @@ export default async function ContactPage() {
                 href={waLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 text-center bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+                className="flex-1 text-center bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-4 rounded-xl text-lg transition-all hover:scale-105 shadow-lg"
               >
-                💬 WhatsApp
+                💬 Escríbenos por WhatsApp
               </a>
               {contact.mapLink && (
                 <a

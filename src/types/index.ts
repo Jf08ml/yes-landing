@@ -39,18 +39,8 @@ export interface FAQItem {
   answer: string;
 }
 
-export type AnnouncementsDisplay = 'ticker' | 'ticker-image' | 'marquee' | 'cards' | 'header-hybrid' | 'hero-split';
-
-export interface Announcement {
-  text: string;
-  url?: string;
-  imageUrl?: string;
-}
-
 export interface HomeContent {
   hero: HeroContent;
-  announcements?: Announcement[];
-  announcementsDisplay?: AnnouncementsDisplay;
   stats: Stat[];
   trustBar: string[];
   features: Feature[];
@@ -149,6 +139,7 @@ export interface SocialLink {
 
 export interface ContactContent {
   whatsapp: string;
+  paymentsUrl?: string;
   phone: string;
   email: string;
   address: string;
@@ -177,17 +168,22 @@ export interface Lead {
   createdAt: Date | string;
 }
 
+// ── Firestore: blogPosts/{id} ──
 export interface BlogPost {
   id: string;
   slug: string;
   title: string;
-  content: string; // Markdown
+  content: string; // HTML (TipTap) — legacy posts may contain Markdown
   excerpt: string;
+  coverType?: 'image' | 'video'; // defaults to 'image'
   coverImage?: string;
+  coverVideo?: string; // YouTube URL or direct video URL
   date: string;
   author: string;
   category: string;
   published: boolean;
+  type: 'blog' | 'noticia';
+  expiresAt?: string; // ISO date — solo para noticias, filtro de visualización
 }
 
 export interface BlogContent {

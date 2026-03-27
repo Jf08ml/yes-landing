@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { fetchCoursesContent } from '@/lib/content';
 import Section from '@/components/ui/Section';
-import LeadForm from '@/components/forms/LeadForm';
 
 export const revalidate = 300;
 
@@ -111,15 +110,6 @@ export default async function CoursesPage() {
         </div>
       </section>
 
-      {/* Lead form */}
-      <Section>
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold text-text text-center mb-8">
-            Solicita más información
-          </h2>
-          <LeadForm sourcePage="cursos" />
-        </div>
-      </Section>
     </>
   );
 }

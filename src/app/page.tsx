@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { fetchHomeContent, fetchContactContent, fetchBlogPosts } from '@/lib/content';
+import { fetchHomeContent, fetchContactContent, fetchBlogPosts, fetchNoticias } from '@/lib/content';
 import { buildLocalBusinessJsonLd, buildFAQJsonLd, buildCourseJsonLd } from '@/lib/seo';
 import Hero from '@/components/home/Hero';
 import TrustBar from '@/components/home/TrustBar';
@@ -11,9 +11,6 @@ import FAQ from '@/components/home/FAQ';
 import CTAFinal from '@/components/home/CTAFinal';
 import YESFactorSection from '@/components/home/YESFactorSection';
 import BlogPreview from '@/components/home/BlogPreview';
-import AnnouncementsCards from '@/components/home/AnnouncementsCards';
-import AnnouncementsHeaderBar from '@/components/home/AnnouncementsHeaderBar';
-
 
 export const revalidate = 300;
 
@@ -30,13 +27,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [home, contact, blogPosts] = await Promise.all([
+  const [home, contact, blogPosts, noticias] = await Promise.all([
     fetchHomeContent(),
     fetchContactContent(),
     fetchBlogPosts(),
+    fetchNoticias(),
   ]);
-
-  console.log(home.trustBar)
 
   const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || contact.whatsapp || '573133973411';
 
@@ -74,25 +70,17 @@ export default async function HomePage() {
 
       <Hero
         hero={home.hero}
-        announcements={home.announcements}
-        displayMode={home.announcementsDisplay}
+        noticias={noticias}
         whatsapp={whatsapp}
       />
-      {home.announcementsDisplay === 'header-hybrid' && home.announcements && home.announcements.length > 0 && (
-        <AnnouncementsHeaderBar items={home.announcements} />
-      )}
-      {home.announcementsDisplay === 'cards' && home.announcements && home.announcements.length > 0 && (
-        <AnnouncementsCards items={home.announcements} />
-      )}
       <TrustBar trustItems={home.trustBar} stats={home.stats} />
       <Features features={home.features} />
-      <CoursesPreview courses={home.coursesPreview} />
+      <CoursesPreview />
       <Location contact={contact} />
       <Testimonials testimonials={home.testimonials} />
       <YESFactorSection preview={home.yesFactorPreview} />
       <BlogPreview posts={blogPosts} />
       <FAQ faq={home.faq} />
-
       <CTAFinal
         title={home.ctaFinal.title}
         subtitle={home.ctaFinal.subtitle}

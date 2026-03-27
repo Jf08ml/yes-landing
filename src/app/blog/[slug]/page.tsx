@@ -71,40 +71,62 @@ export default async function BlogPostPage({ params }: PageProps) {
         </p>
       </header>
 
-      {/* Featured Image */}
-      <div className="max-w-6xl mx-auto px-4 mb-16">
-        <div className="aspect-[21/9] relative rounded-3xl overflow-hidden shadow-2xl">
-          {post.coverImage ? (
-            <Image
-              src={post.coverImage}
-              alt={post.title}
-              fill
-              className="object-cover"
-              priority
-            />
-          ) : (
-            <div className="w-full h-full bg-surface" />
-          )}
+      {/* Featured media */}
+      {(post.coverImage || post.coverVideo) && (
+        <div className="max-w-6xl mx-auto px-4 mb-16">
+          <div className="aspect-[16/9] relative rounded-3xl overflow-hidden shadow-2xl bg-black">
+            {post.coverType === 'video' && post.coverVideo ? (
+              <iframe
+                src={
+                  post.coverVideo.includes('youtube.com/watch')
+                    ? `https://www.youtube.com/embed/${new URLSearchParams(post.coverVideo.split('?')[1]).get('v')}`
+                    : post.coverVideo.includes('youtu.be')
+                      ? `https://www.youtube.com/embed/${post.coverVideo.split('/').pop()}`
+                      : post.coverVideo
+                }
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : post.coverImage ? (
+              <Image
+                src={post.coverImage}
+                alt={post.title}
+                fill
+                className="object-cover"
+                priority
+              />
+            ) : null}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Post Content */}
       <Section className="bg-white py-0">
         <div className="max-w-3xl mx-auto">
-          {/* Content Render - Note: In a real app we'd use react-markdown here. 
-              For now, simple split by lines since Markdown parser isn't installed. */}
-          <div className="prose prose-lg prose-primary max-w-none">
-            {post.content.split('\n').map((line, i) => {
-              if (line.startsWith('# ')) return <h1 key={i} className="text-3xl font-bold mt-8 mb-4">{line.replace('# ', '')}</h1>;
-              if (line.startsWith('## ')) return <h2 key={i} className="text-2xl font-bold mt-8 mb-4">{line.replace('## ', '')}</h2>;
-              if (line.startsWith('### ')) return <h3 key={i} className="text-xl font-bold mt-6 mb-3">{line.replace('### ', '')}</h3>;
-              if (line.startsWith('**') && line.endsWith('**')) return <p key={i} className="font-bold mb-4">{line.replaceAll('**', '')}</p>;
-              if (line.trim() === '') return <div key={i} className="h-4" />;
-              if (line.startsWith('* ')) return <li key={i} className="ml-4 mb-2">{line.replace('* ', '')}</li>;
-              if (line.match(/^\d\./)) return <li key={i} className="ml-4 mb-2 list-item list-decimal" style={{ marginLeft: '1.5rem'}}>{line.replace(/^\d\./, '')}</li>;
-              
-              return <p key={i} className="text-text-light leading-relaxed mb-4 text-lg">{line}</p>;
-            })}
+          <div className="prose prose-lg prose-primary max-w-none
+            prose-headings:text-text prose-headings:font-bold
+            prose-p:text-text-light prose-p:leading-relaxed
+            prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+            prose-blockquote:border-primary prose-blockquote:text-text-light
+            prose-img:rounded-2xl prose-img:shadow-md
+            prose-strong:text-text
+          ">
+            {post.content.trim().startsWith('<') ? (
+              // HTML desde TipTap
+              <div dangerouslySetInnerHTML={{ __html: post.content }} />
+            ) : (
+              // Markdown legacy
+              post.content.split('\n').map((line, i) => {
+                if (line.startsWith('# ')) return <h1 key={i}>{line.replace('# ', '')}</h1>;
+                if (line.startsWith('## ')) return <h2 key={i}>{line.replace('## ', '')}</h2>;
+                if (line.startsWith('### ')) return <h3 key={i}>{line.replace('### ', '')}</h3>;
+                if (line.trim() === '') return <div key={i} className="h-4" />;
+                if (line.startsWith('* ')) return <li key={i}>{line.replace('* ', '')}</li>;
+                if (line.match(/^\d\./)) return <li key={i} className="list-decimal ml-6">{line.replace(/^\d\./, '')}</li>;
+                return <p key={i}>{line}</p>;
+              })
+            )}
           </div>
         </div>
       </Section>

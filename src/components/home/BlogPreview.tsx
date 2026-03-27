@@ -26,7 +26,7 @@ export default function BlogPreview({ posts }: BlogPreviewProps) {
           href="/blog" 
           className="text-primary font-bold hover:underline flex items-center gap-2 group"
         >
-          Ver todas las entradas
+          Ver blog & noticias
           <span className="group-hover:translate-x-1 transition-transform">→</span>
         </Link>
       </div>
