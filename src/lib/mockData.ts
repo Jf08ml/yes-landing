@@ -1,4 +1,4 @@
-import { HomeContent, CoursesContent, ContactContent, YESFactorContent, BlogPost, BlogContent } from '@/types';
+import { HomeContent, CoursesContent, Program, ContactContent, YESFactorContent, BlogPost, BlogContent } from '@/types';
 
 export const mockHome: HomeContent = {
   hero: {
@@ -135,105 +135,16 @@ export const mockCourses: CoursesContent = {
   pageTitle: 'Cursos de Inglés y Francés en Neiva',
   pageDescription:
     'Conoce nuestra oferta académica. Somos garantía en el aprendizaje del Inglés y Francés con certificación B1 del Marco Común Europeo.',
-  courses: [
-    {
-      id: 'ingles',
-      language: 'ingles',
-      title: 'Cursos de Inglés en Neiva',
-      description:
-        'Aprende inglés con el método comunicativo 70/30. Cursos 100% conversacionales para todos los niveles.',
-      levels: 'A1 – C1',
-      certification:
-        'Certificamos nivel B1 (intermedio alto) del Marco Común Europeo de Referencia',
-      modalities: [
-        {
-          id: 'intensivo',
-          name: 'Intensivo entre semana',
-          description:
-            'Ideal para quienes buscan avanzar rápido. Clases diarias de lunes a viernes.',
-          duration: '~3 meses por nivel',
-          schedules: [
-            { name: 'Mañana', days: 'Lunes a Viernes', hours: '6:00 am – 8:00 am' },
-            { name: 'Medio día', days: 'Lunes a Viernes', hours: '10:00 am – 12:00 pm' },
-            { name: 'Tarde', days: 'Lunes a Viernes', hours: '4:00 pm – 6:00 pm' },
-            { name: 'Noche', days: 'Lunes a Viernes', hours: '6:00 pm – 8:00 pm' },
-          ],
-        },
-        {
-          id: 'semestral',
-          name: 'Semestral (sábados)',
-          description:
-            'Perfecto para quienes trabajan o estudian entre semana. Clases los sábados.',
-          duration: '~6 meses por nivel',
-          schedules: [
-            { name: 'Mañana', days: 'Sábados', hours: '8:00 am – 12:00 pm' },
-            { name: 'Tarde', days: 'Sábados', hours: '2:00 pm – 6:00 pm' },
-          ],
-        },
-        {
-          id: 'personalizado',
-          name: 'Personalizado',
-          description:
-            'Clases individuales o en grupos pequeños. Horarios a tu medida según tus necesidades.',
-          duration: 'Flexible',
-          schedules: [
-            { name: 'A convenir', days: 'Lunes a Sábado', hours: 'Horario personalizado' },
-          ],
-        },
-      ],
-      benefits: [
-        'Método comunicativo 70/30',
-        'Profesores certificados',
-        'Grupos reducidos',
-        'Material didáctico incluido',
-        'Certificación B1 garantizada',
-        'Clase demo gratuita',
-      ],
-    },
-    {
-      id: 'frances',
-      language: 'frances',
-      title: 'Cursos de Francés en Neiva',
-      description:
-        'Aprende francés con profesores especializados. El único instituto en Neiva con programas completos de francés.',
-      levels: 'A1 – B2',
-      certification:
-        'Certificamos nivel B1 del Marco Común Europeo de Referencia para las lenguas',
-      modalities: [
-        {
-          id: 'intensivo',
-          name: 'Intensivo entre semana',
-          description: 'Avanza rápidamente con clases diarias.',
-          duration: '~3 meses por nivel',
-          schedules: [
-            { name: 'Consultar', days: 'Lunes a Viernes', hours: 'Consultar disponibilidad' },
-          ],
-        },
-        {
-          id: 'semestral',
-          name: 'Semestral (sábados)',
-          description: 'Clases los sábados para quienes trabajan entre semana.',
-          duration: '~6 meses por nivel',
-          schedules: [
-            { name: 'Consultar', days: 'Sábados', hours: 'Consultar disponibilidad' },
-          ],
-        },
-      ],
-      benefits: [
-        'Profesores especializados en francés',
-        'Metodología comunicativa',
-        'Preparación para exámenes DELF',
-        'Grupos reducidos',
-        'Material incluido',
-      ],
-    },
-  ],
   seo: {
     title: 'Cursos de Inglés y Francés en Neiva | YES Institute',
     description:
       'Cursos de inglés y francés en Neiva, Huila. Modalidades intensiva, semestral y personalizada. Certificación B1 garantizada.',
   },
 };
+
+// Programs are created and managed exclusively from the admin panel.
+// This empty array is just a fallback when Firebase is not configured.
+export const mockPrograms: Program[] = [];
 
 export const mockContact: ContactContent = {
   whatsapp: '573133973411',

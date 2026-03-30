@@ -30,6 +30,16 @@ service cloud.firestore {
         ];
     }
 
+    // testimonials: anyone can create (public form), public read testimonials (filtered in client), admins manage all
+    match /testimonials/{testimonialId} {
+      allow create: if true;
+      allow read: if true;  // Public read - filtering by approved is done in client
+      allow update, delete: if request.auth != null
+        && request.auth.token.email in [
+          'admin@yes.edu.co'
+        ];
+    }
+
     // Deny everything else
     match /{document=**} {
       allow read, write: if false;

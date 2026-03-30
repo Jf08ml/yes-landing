@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import Section from '@/components/ui/Section';
-import type { BlogPost } from '@/types';
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import Section from "@/components/ui/Section";
+import type { BlogPost } from "@/types";
 
 interface BlogPreviewProps {
   posts: BlogPost[];
@@ -16,18 +16,21 @@ export default function BlogPreview({ posts }: BlogPreviewProps) {
       <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
         <div className="max-w-2xl">
           <h2 className="text-3xl sm:text-4xl font-black text-text mb-4">
-            Blog & Noticias
+            Blog
           </h2>
           <p className="text-text-light text-lg">
-            Consejos para tu aprendizaje, eventos institucionales y todo lo que necesitas saber sobre el mundo bilingüe.
+            Consejos para tu aprendizaje, eventos institucionales y todo lo que
+            necesitas saber sobre el mundo bilingüe.
           </p>
         </div>
-        <Link 
-          href="/blog" 
+        <Link
+          href="/blog"
           className="text-primary font-bold hover:underline flex items-center gap-2 group"
         >
           Ver blog & noticias
-          <span className="group-hover:translate-x-1 transition-transform">→</span>
+          <span className="group-hover:translate-x-1 transition-transform">
+            →
+          </span>
         </Link>
       </div>
 
@@ -41,7 +44,10 @@ export default function BlogPreview({ posts }: BlogPreviewProps) {
             transition={{ delay: i * 0.1 }}
             className="group flex flex-col bg-surface rounded-3xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all"
           >
-            <Link href={`/blog/${post.slug}`} className="block aspect-[16/9] relative overflow-hidden">
+            <Link
+              href={`/blog/${post.slug}`}
+              className="block aspect-[16/9] relative overflow-hidden"
+            >
               {post.coverImage ? (
                 <Image
                   src={post.coverImage}
@@ -63,16 +69,14 @@ export default function BlogPreview({ posts }: BlogPreviewProps) {
 
             <div className="p-6 flex flex-col flex-1">
               <time className="text-xs text-text-light mb-2">
-                {new Date(post.date).toLocaleDateString('es-ES', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
+                {new Date(post.date).toLocaleDateString("es-ES", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
                 })}
               </time>
               <h3 className="text-xl font-bold text-text mb-3 line-clamp-2 group-hover:text-primary transition-colors">
-                <Link href={`/blog/${post.slug}`}>
-                  {post.title}
-                </Link>
+                <Link href={`/blog/${post.slug}`}>{post.title}</Link>
               </h3>
               <p className="text-text-light text-sm line-clamp-3 mb-6 flex-1">
                 {post.excerpt}
@@ -82,7 +86,9 @@ export default function BlogPreview({ posts }: BlogPreviewProps) {
                 className="text-sm font-bold text-primary flex items-center gap-1 group/link"
               >
                 Leer más
-                <span className="group-hover/link:translate-x-1 transition-transform">›</span>
+                <span className="group-hover/link:translate-x-1 transition-transform">
+                  ›
+                </span>
               </Link>
             </div>
           </motion.article>

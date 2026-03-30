@@ -6,15 +6,18 @@ import {
   mockContact,
   mockYESFactor,
   mockBlogPosts,
-  mockBlogContent
+  mockBlogContent,
+  mockPrograms,
 } from './mockData';
 import {
   HomeContent,
   CoursesContent,
+  Program,
   ContactContent,
   YESFactorContent,
   BlogPost,
-  BlogContent
+  BlogContent,
+  TestimonialSubmission,
 } from '@/types';
 
 async function fetchDoc<T>(docPath: string, fallback: T): Promise<T> {
@@ -112,4 +115,36 @@ export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null
 
 export async function fetchBlogContent(): Promise<BlogContent> {
   return fetchDoc<BlogContent>('blogContent', mockBlogContent);
+}
+
+/** Programas activos — gestionados desde el admin, ordenados por `order` */
+export async function fetchPrograms(): Promise<Program[]> {
+  if (!isFirebaseConfigured || !db) return mockPrograms;
+  try {
+    const snap = await getDoc(doc(db, 'siteConfig', 'programs'));
+    if (!snap.exists()) return mockPrograms;
+    const items: Program[] = snap.data().items ?? [];
+    return items.filter(p => p.active).sort((a, b) => a.order - b.order);
+  } catch (err) {
+    console.error('Error fetching programs:', err);
+    return mockPrograms;
+  }
+}
+
+/** Testimonios aprobados — ordenados por más reciente */
+export async function fetchApprovedTestimonials(): Promise<TestimonialSubmission[]> {
+  if (!isFirebaseConfigured || !db) return [];
+  try {
+    const { orderBy } = await import('firebase/firestore');
+    const q = query(
+      collection(db, 'testimonials'),
+      where('approved', '==', true),
+      orderBy('createdAt', 'desc'),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as TestimonialSubmission));
+  } catch (err) {
+    console.error('Error fetching testimonials:', err);
+    return [];
+  }
 }

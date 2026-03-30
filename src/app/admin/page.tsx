@@ -8,7 +8,7 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
-import { doc, getDoc, updateDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, setDoc, deleteDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Image from 'next/image';
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase';
 import ImageUploader from '@/components/admin/ImageUploader';
@@ -16,21 +16,23 @@ import RichTextEditor from '@/components/admin/RichTextEditor';
 import type {
   HomeContent,
   CoursesContent,
+  Program,
   ContactContent,
   YESFactorContent,
   BlogPost,
   BlogContent,
+  TestimonialSubmission,
 } from '@/types';
-import { 
-  mockHome, 
-  mockCourses, 
-  mockContact, 
-  mockYESFactor, 
-  mockBlogPosts, 
-  mockBlogContent 
+import {
+  mockHome,
+  mockCourses,
+  mockContact,
+  mockYESFactor,
+  mockBlogPosts,
+  mockBlogContent
 } from '@/lib/mockData';
 
-type TabName = 'home' | 'courses' | 'contact' | 'yesFactor' | 'blog';
+type TabName = 'home' | 'courses' | 'contact' | 'yesFactor' | 'blog' | 'testimonials';
 
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -50,6 +52,8 @@ export default function AdminPage() {
   const [yesFactor, setYesFactor] = useState<YESFactorContent | null>(null);
   const [blogContent, setBlogContent] = useState<BlogContent | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [testimonialSubmissions, setTestimonialSubmissions] = useState<TestimonialSubmission[]>([]);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !auth) {
@@ -66,20 +70,24 @@ export default function AdminPage() {
   const loadContent = useCallback(async () => {
     if (!db) return;
     try {
-      const [homeSnap, coursesSnap, contactSnap, yesFactorSnap, blogContentSnap, blogPostsSnap] = await Promise.all([
+      const [homeSnap, coursesSnap, programsSnap, contactSnap, yesFactorSnap, blogContentSnap, blogPostsSnap, testimonialsSnap] = await Promise.all([
         getDoc(doc(db, 'siteConfig', 'home')),
         getDoc(doc(db, 'siteConfig', 'courses')),
+        getDoc(doc(db, 'siteConfig', 'programs')),
         getDoc(doc(db, 'siteConfig', 'contact')),
         getDoc(doc(db, 'siteConfig', 'yesFactor')),
         getDoc(doc(db, 'siteConfig', 'blogContent')),
         getDocs(collection(db, 'blogPosts')),
+        getDocs(query(collection(db, 'testimonials'), orderBy('createdAt', 'desc'))),
       ]);
       if (homeSnap.exists()) setHome(homeSnap.data() as HomeContent);
       if (coursesSnap.exists()) setCourses(coursesSnap.data() as CoursesContent);
+      if (programsSnap.exists()) setPrograms((programsSnap.data().items ?? []) as Program[]);
       if (contactSnap.exists()) setContact(contactSnap.data() as ContactContent);
       if (yesFactorSnap.exists()) setYesFactor(yesFactorSnap.data() as YESFactorContent);
       if (blogContentSnap.exists()) setBlogContent(blogContentSnap.data() as BlogContent);
       setBlogPosts(blogPostsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
+      setTestimonialSubmissions(testimonialsSnap.docs.map(d => ({ id: d.id, ...d.data() } as TestimonialSubmission)));
     } catch (err) {
       console.error('Error loading content:', err);
     }
@@ -109,6 +117,7 @@ export default function AdminPage() {
       const updates: Promise<void>[] = [];
       if (home) updates.push(updateDoc(doc(db, 'siteConfig', 'home'), { ...home }));
       if (courses) updates.push(updateDoc(doc(db, 'siteConfig', 'courses'), { ...courses }));
+      updates.push(setDoc(doc(db, 'siteConfig', 'programs'), { items: programs }));
       if (contact) updates.push(updateDoc(doc(db, 'siteConfig', 'contact'), { ...contact }));
       if (yesFactor) updates.push(updateDoc(doc(db, 'siteConfig', 'yesFactor'), { ...yesFactor }));
       if (blogContent) updates.push(updateDoc(doc(db, 'siteConfig', 'blogContent'), { ...blogContent }));
@@ -253,19 +262,31 @@ export default function AdminPage() {
       <div className="max-w-5xl mx-auto p-4 sm:p-8">
         {/* Tabs */}
         <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 border border-gray-100 overflow-x-auto">
-          {(['home', 'courses', 'blog', 'yesFactor', 'contact'] as TabName[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
-                activeTab === tab
-                  ? 'bg-primary text-white'
-                  : 'text-text-light hover:bg-gray-50'
-              }`}
-            >
-              {tab === 'home' ? 'Home' : tab === 'courses' ? 'Cursos' : tab === 'blog' ? 'Blog' : tab === 'contact' ? 'Contacto' : 'YES Factor'}
-            </button>
-          ))}
+          {(['home', 'courses', 'blog', 'yesFactor', 'contact', 'testimonials'] as TabName[]).map((tab) => {
+            const labels: Record<TabName, string> = {
+              home: 'Home', courses: 'Cursos', blog: 'Blog',
+              contact: 'Contacto', yesFactor: 'YES Factor', testimonials: 'Testimonios',
+            };
+            const pending = tab === 'testimonials'
+              ? testimonialSubmissions.filter(t => !t.approved).length
+              : 0;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`relative flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+                  activeTab === tab ? 'bg-primary text-white' : 'text-text-light hover:bg-gray-50'
+                }`}
+              >
+                {labels[tab]}
+                {pending > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                    {pending}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Home editor */}
@@ -424,33 +445,21 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Courses editor */}
-        {activeTab === 'courses' && courses && (
+        {/* Courses + Programs editor */}
+        {activeTab === 'courses' && (
           <div className="space-y-6">
-            <EditorSection title="Página de cursos">
-              <Field label="Título de página" value={courses.pageTitle} onChange={(v) => setCourses({ ...courses, pageTitle: v })} />
-              <Field label="Descripción" value={courses.pageDescription} onChange={(v) => setCourses({ ...courses, pageDescription: v })} textarea />
-            </EditorSection>
-            {courses.courses.map((course, ci) => (
-              <EditorSection key={ci} title={`Curso: ${course.title}`}>
-                <Field label="Título" value={course.title} onChange={(v) => {
-                  const c = [...courses.courses]; c[ci] = { ...course, title: v };
-                  setCourses({ ...courses, courses: c });
-                }} />
-                <Field label="Descripción" value={course.description} onChange={(v) => {
-                  const c = [...courses.courses]; c[ci] = { ...course, description: v };
-                  setCourses({ ...courses, courses: c });
-                }} textarea />
-                <Field label="Niveles" value={course.levels} onChange={(v) => {
-                  const c = [...courses.courses]; c[ci] = { ...course, levels: v };
-                  setCourses({ ...courses, courses: c });
-                }} />
-                <Field label="Certificación" value={course.certification} onChange={(v) => {
-                  const c = [...courses.courses]; c[ci] = { ...course, certification: v };
-                  setCourses({ ...courses, courses: c });
-                }} />
+            {/* Page metadata */}
+            {courses && (
+              <EditorSection title="Texto de la página de Cursos">
+                <Field label="Título principal" value={courses.pageTitle} onChange={(v) => setCourses({ ...courses, pageTitle: v })} />
+                <Field label="Descripción" value={courses.pageDescription} onChange={(v) => setCourses({ ...courses, pageDescription: v })} textarea />
+                <Field label="Título SEO" value={courses.seo.title} onChange={(v) => setCourses({ ...courses, seo: { ...courses.seo, title: v } })} />
+                <Field label="Descripción SEO" value={courses.seo.description} onChange={(v) => setCourses({ ...courses, seo: { ...courses.seo, description: v } })} textarea />
               </EditorSection>
-            ))}
+            )}
+
+            {/* Programs CRUD */}
+            <ProgramsEditor programs={programs} onChange={setPrograms} />
           </div>
         )}
 
@@ -806,6 +815,14 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Testimonials moderation */}
+        {activeTab === 'testimonials' && (
+          <TestimonialsTab
+            submissions={testimonialSubmissions}
+            onUpdate={(updated) => setTestimonialSubmissions(updated)}
+          />
+        )}
+
         {/* No content loaded */}
         {activeTab === 'home' && !home && (
           <p className="text-text-light text-center py-12">No se encontró contenido de Home en Firestore. Crea el documento siteConfig/home primero.</p>
@@ -836,6 +853,569 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Programs CRUD ──
+
+const EMPTY_PROGRAM: Omit<Program, 'id' | 'order'> = {
+  title: '',
+  subtitle: '',
+  language: 'ingles',
+  tag: '',
+  levels: '',
+  modality: '',
+  intensity: '',
+  schedules: [],
+  highlights: [],
+  materials: '',
+  price: '',
+  notes: '',
+  active: true,
+};
+
+function ProgramsEditor({
+  programs,
+  onChange,
+}: {
+  programs: Program[];
+  onChange: (p: Program[]) => void;
+}) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const addProgram = () => {
+    const id = `prog-${Date.now()}`;
+    const newProg: Program = {
+      ...EMPTY_PROGRAM,
+      id,
+      order: programs.length + 1,
+      schedules: [],
+      highlights: [],
+    };
+    onChange([...programs, newProg]);
+    setExpandedId(id);
+  };
+
+  const updateProgram = (id: string, patch: Partial<Program>) => {
+    onChange(programs.map(p => (p.id === id ? { ...p, ...patch } : p)));
+  };
+
+  const deleteProgram = (id: string) => {
+    if (!confirm('¿Eliminar este programa?')) return;
+    onChange(programs.filter(p => p.id !== id));
+    if (expandedId === id) setExpandedId(null);
+  };
+
+  const moveProgram = (id: string, dir: -1 | 1) => {
+    const sorted = [...programs].sort((a, b) => a.order - b.order);
+    const idx = sorted.findIndex(p => p.id === id);
+    const target = idx + dir;
+    if (target < 0 || target >= sorted.length) return;
+    const reordered = sorted.map((p, i) => {
+      if (i === idx) return { ...p, order: sorted[target].order };
+      if (i === target) return { ...p, order: sorted[idx].order };
+      return p;
+    });
+    onChange(reordered);
+  };
+
+  const sorted = [...programs].sort((a, b) => a.order - b.order);
+
+  const fieldCls = 'w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm bg-white';
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-text text-sm uppercase tracking-wider">
+          Programas ({programs.length})
+        </h3>
+        <button
+          onClick={addProgram}
+          className="text-sm bg-primary hover:bg-primary-dark text-white font-bold px-4 py-2 rounded-lg transition-colors"
+        >
+          + Nuevo programa
+        </button>
+      </div>
+
+      {sorted.length === 0 && (
+        <p className="text-text-light text-sm text-center py-8">
+          No hay programas. Crea el primero con el botón de arriba.
+        </p>
+      )}
+
+      <div className="space-y-3">
+        {sorted.map((prog, idx) => {
+          const isOpen = expandedId === prog.id;
+          const langColor = { ingles: '#C1121F', frances: '#1A56DB', ambos: '#6B21A8' }[prog.language];
+
+          return (
+            <div key={prog.id} className="border border-gray-200 rounded-xl overflow-hidden">
+              {/* Header row */}
+              <div className="flex items-center gap-3 p-3 bg-gray-50">
+                {/* Reorder */}
+                <div className="flex flex-col gap-0.5 shrink-0">
+                  <button
+                    onClick={() => moveProgram(prog.id, -1)}
+                    disabled={idx === 0}
+                    className="text-gray-400 hover:text-gray-600 disabled:opacity-20 text-xs leading-none px-1"
+                  >▲</button>
+                  <button
+                    onClick={() => moveProgram(prog.id, 1)}
+                    disabled={idx === sorted.length - 1}
+                    className="text-gray-400 hover:text-gray-600 disabled:opacity-20 text-xs leading-none px-1"
+                  >▼</button>
+                </div>
+
+                {/* Active toggle */}
+                <input
+                  type="checkbox"
+                  checked={prog.active}
+                  onChange={e => updateProgram(prog.id, { active: e.target.checked })}
+                  className="w-4 h-4 accent-primary shrink-0"
+                  title="Activo / visible en el sitio"
+                />
+
+                {/* Language dot */}
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: langColor }} />
+
+                {/* Title */}
+                <button
+                  onClick={() => setExpandedId(isOpen ? null : prog.id)}
+                  className="flex-1 text-left text-sm font-semibold text-text truncate"
+                >
+                  {prog.title || <span className="text-gray-300 italic">Sin título</span>}
+                  {prog.subtitle && <span className="text-gray-400 font-normal ml-2 text-xs">— {prog.subtitle}</span>}
+                </button>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setExpandedId(isOpen ? null : prog.id)}
+                    className="text-xs text-primary font-medium hover:underline"
+                  >
+                    {isOpen ? 'Cerrar' : 'Editar'}
+                  </button>
+                  <button
+                    onClick={() => deleteProgram(prog.id)}
+                    className="text-xs text-red-400 hover:text-red-600 font-medium"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+
+              {/* Edit form */}
+              {isOpen && (
+                <div className="p-4 border-t border-gray-100 space-y-4">
+                  {/* Row 1 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-text-light mb-1">Título del programa *</label>
+                      <input className={fieldCls} value={prog.title} onChange={e => updateProgram(prog.id, { title: e.target.value })} placeholder="Ej: Niveles Intensivos Inglés" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-text-light mb-1">Audiencia / público</label>
+                      <input className={fieldCls} value={prog.subtitle ?? ''} onChange={e => updateProgram(prog.id, { subtitle: e.target.value })} placeholder="Ej: Jóvenes-Adultos" />
+                    </div>
+                  </div>
+
+                  {/* Row 2 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-text-light mb-1">Idioma</label>
+                      <select
+                        className={fieldCls}
+                        value={prog.language}
+                        onChange={e => updateProgram(prog.id, { language: e.target.value as Program['language'] })}
+                      >
+                        <option value="ingles">Inglés</option>
+                        <option value="frances">Francés</option>
+                        <option value="ambos">Inglés y Francés</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-text-light mb-1">Etiqueta / tipo</label>
+                      <input className={fieldCls} value={prog.tag ?? ''} onChange={e => updateProgram(prog.id, { tag: e.target.value })} placeholder="Ej: Intensivo, Sábados, YES Kids, GEP" />
+                    </div>
+                  </div>
+
+                  {/* Row 3 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-text-light mb-1">Duración / Niveles</label>
+                      <input className={fieldCls} value={prog.levels ?? ''} onChange={e => updateProgram(prog.id, { levels: e.target.value })} placeholder="Ej: 6 Niveles (Año y Medio)" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-text-light mb-1">Modalidad</label>
+                      <input className={fieldCls} value={prog.modality ?? ''} onChange={e => updateProgram(prog.id, { modality: e.target.value })} placeholder="Ej: Virtual y/o Presencial" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-text-light mb-1">Intensidad</label>
+                      <input className={fieldCls} value={prog.intensity ?? ''} onChange={e => updateProgram(prog.id, { intensity: e.target.value })} placeholder="Ej: 110 horas por nivel" />
+                    </div>
+                  </div>
+
+                  {/* Schedules */}
+                  <div>
+                    <label className="block text-xs font-medium text-text-light mb-2">Horarios</label>
+                    <div className="space-y-2">
+                      {(prog.schedules ?? []).map((s, si) => (
+                        <div key={si} className="flex gap-2">
+                          <input
+                            className={`${fieldCls} flex-1`}
+                            value={s}
+                            onChange={e => {
+                              const arr = [...(prog.schedules ?? [])];
+                              arr[si] = e.target.value;
+                              updateProgram(prog.id, { schedules: arr });
+                            }}
+                            placeholder="Ej: SAB AM: 8:00 a 12:00 M"
+                          />
+                          <button
+                            onClick={() => updateProgram(prog.id, { schedules: (prog.schedules ?? []).filter((_, i) => i !== si) })}
+                            className="text-red-400 hover:text-red-600 text-sm px-2"
+                          >×</button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => updateProgram(prog.id, { schedules: [...(prog.schedules ?? []), ''] })}
+                        className="text-xs text-primary font-semibold hover:underline"
+                      >
+                        + Agregar horario
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Highlights */}
+                  <div>
+                    <label className="block text-xs font-medium text-text-light mb-1">Puntos destacados <span className="text-gray-300">(para programas especiales como GEP)</span></label>
+                    <div className="space-y-2">
+                      {(prog.highlights ?? []).map((h, hi) => (
+                        <div key={hi} className="flex gap-2">
+                          <input
+                            className={`${fieldCls} flex-1`}
+                            value={h}
+                            onChange={e => {
+                              const arr = [...(prog.highlights ?? [])];
+                              arr[hi] = e.target.value;
+                              updateProgram(prog.id, { highlights: arr });
+                            }}
+                            placeholder="Ej: 100% alineación con el MCERL"
+                          />
+                          <button
+                            onClick={() => updateProgram(prog.id, { highlights: (prog.highlights ?? []).filter((_, i) => i !== hi) })}
+                            className="text-red-400 hover:text-red-600 text-sm px-2"
+                          >×</button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => updateProgram(prog.id, { highlights: [...(prog.highlights ?? []), ''] })}
+                        className="text-xs text-primary font-semibold hover:underline"
+                      >
+                        + Agregar punto
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label className="block text-xs font-medium text-text-light mb-1">Nota adicional (visible)</label>
+                    <input className={fieldCls} value={prog.notes ?? ''} onChange={e => updateProgram(prog.id, { notes: e.target.value })} placeholder="Ej: Cupos limitados" />
+                  </div>
+
+                  {/* Price & materials */}
+                  <div className="border-t border-dashed border-gray-200 pt-3 space-y-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Inversión y material</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-text-light">Inversión / Precio</label>
+                        <input className={fieldCls} value={prog.price ?? ''} onChange={e => updateProgram(prog.id, { price: e.target.value })} placeholder="Ej: $755.000 Presencial / $650.000 Virtual" />
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={prog.showPrice ?? false}
+                            onChange={e => updateProgram(prog.id, { showPrice: e.target.checked })}
+                            className="w-4 h-4 accent-primary"
+                          />
+                          <span className="text-xs text-text-light">Mostrar precio en el sitio</span>
+                        </label>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-text-light">Material</label>
+                        <input className={fieldCls} value={prog.materials ?? ''} onChange={e => updateProgram(prog.id, { materials: e.target.value })} placeholder="Ej: $160.000 / Incluido" />
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={prog.showMaterials ?? false}
+                            onChange={e => updateProgram(prog.id, { showMaterials: e.target.checked })}
+                            className="w-4 h-4 accent-primary"
+                          />
+                          <span className="text-xs text-text-light">Mostrar material en el sitio</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {programs.length > 0 && (
+        <p className="text-xs text-text-light text-center pt-1">
+          Recuerda guardar los cambios con el botón al final de la página.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Testimonials moderation tab ──
+
+function TestimonialsTab({
+  submissions,
+  onUpdate,
+}: {
+  submissions: TestimonialSubmission[];
+  onUpdate: (updated: TestimonialSubmission[]) => void;
+}) {
+  const [actionMsg, setActionMsg] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Partial<TestimonialSubmission>>({});
+
+  const startEdit = (testimonial: TestimonialSubmission) => {
+    setEditingId(testimonial.id || null);
+    setEditData(testimonial);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditData({});
+  };
+
+  const saveEdit = async (id: string) => {
+    if (!db) return;
+    try {
+      await updateDoc(doc(db, 'testimonials', id), editData);
+      onUpdate(submissions.map(t => t.id === id ? { ...t, ...editData } : t));
+      setEditingId(null);
+      setEditData({});
+      setActionMsg('✅ Testimonio actualizado');
+      setTimeout(() => setActionMsg(''), 2000);
+    } catch (err) {
+      console.error('Error updating testimonial:', err);
+      setActionMsg('❌ Error al actualizar');
+      setTimeout(() => setActionMsg(''), 2000);
+    }
+  };
+
+  const updateApproval = async (id: string, approved: boolean) => {
+    if (!db) return;
+    try {
+      await updateDoc(doc(db, 'testimonials', id), { approved });
+      onUpdate(submissions.map(t => t.id === id ? { ...t, approved } : t));
+      setActionMsg(approved ? '✅ Aprobado' : '🚫 Rechazado');
+      setTimeout(() => setActionMsg(''), 2000);
+    } catch (err) {
+      console.error('Error updating testimonial:', err);
+    }
+  };
+
+  const deleteTestimonial = async (id: string) => {
+    if (!db || !confirm('¿Eliminar este testimonio?')) return;
+    try {
+      await deleteDoc(doc(db, 'testimonials', id));
+      onUpdate(submissions.filter(t => t.id !== id));
+      setActionMsg('🗑 Eliminado');
+      setTimeout(() => setActionMsg(''), 2000);
+    } catch (err) {
+      console.error('Error deleting testimonial:', err);
+    }
+  };
+
+  const pending = submissions.filter(t => !t.approved);
+  const approved = submissions.filter(t => t.approved);
+
+  return (
+    <div className="space-y-6">
+      {actionMsg && (
+        <p className="text-sm font-medium text-center bg-white border border-gray-100 rounded-xl py-2">{actionMsg}</p>
+      )}
+
+      <EditorSection title={`Pendientes de revisión (${pending.length})`}>
+        {pending.length === 0 ? (
+          <p className="text-text-light text-sm text-center py-4">No hay comentarios pendientes.</p>
+        ) : (
+          <div className="space-y-4">
+            {pending.map(t => (
+              <div key={t.id} className={editingId === t.id ? "border-2 border-primary bg-blue-50 rounded-xl p-4" : "border border-amber-200 bg-amber-50 rounded-xl p-4"}>
+                {editingId === t.id ? (
+                  // ── Modo edición ──
+                  <div className="space-y-3">
+                    <Field 
+                      label="Nombre" 
+                      value={editData.name || ''} 
+                      onChange={(v) => setEditData({ ...editData, name: v })} 
+                    />
+                    <Field 
+                      label="Rol" 
+                      value={editData.role || ''} 
+                      onChange={(v) => setEditData({ ...editData, role: v })} 
+                    />
+                    <div>
+                      <label className="block text-xs font-medium text-text-light mb-1">Texto</label>
+                      <textarea 
+                        value={editData.text || ''} 
+                        onChange={(e) => setEditData({ ...editData, text: e.target.value })} 
+                        rows={3}
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm resize-none"
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => saveEdit(t.id!)}
+                        className="flex-1 bg-primary hover:bg-primary-dark text-white text-xs font-bold py-2 rounded-lg transition-colors"
+                      >
+                        💾 Guardar
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold py-2 rounded-lg transition-colors"
+                      >
+                        ✕ Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // ── Modo visualización ──
+                  <>
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <p className="font-semibold text-sm text-text">{t.name}</p>
+                        <p className="text-xs text-text-light">{t.role}</p>
+                      </div>
+                      <p className="text-xs text-text-light whitespace-nowrap">
+                        {t.createdAt
+                          ? new Date(
+                              typeof t.createdAt === 'string'
+                                ? t.createdAt
+                                : (t.createdAt as unknown as { seconds: number }).seconds * 1000
+                            ).toLocaleDateString('es-CO')
+                          : ''}
+                      </p>
+                    </div>
+                    <p className="text-sm text-text-light italic mb-3">&ldquo;{t.text}&rdquo;</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => startEdit(t)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded-lg transition-colors"
+                      >
+                        ✎ Editar
+                      </button>
+                      <button
+                        onClick={() => updateApproval(t.id!, true)}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 rounded-lg transition-colors"
+                      >
+                        ✓ Aprobar
+                      </button>
+                      <button
+                        onClick={() => deleteTestimonial(t.id!)}
+                        className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold py-2 rounded-lg transition-colors"
+                      >
+                        ✕ Eliminar
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </EditorSection>
+
+      <EditorSection title={`Publicados (${approved.length})`}>
+        {approved.length === 0 ? (
+          <p className="text-text-light text-sm text-center py-4">No hay testimonios aprobados aún.</p>
+        ) : (
+          <div className="space-y-3">
+            {approved.map(t => (
+              <div key={t.id} className={editingId === t.id ? "border-2 border-primary bg-blue-50 rounded-xl p-4" : "border border-gray-100 rounded-xl p-4"}>
+                {editingId === t.id ? (
+                  // ── Modo edición ──
+                  <div className="space-y-3">
+                    <Field 
+                      label="Nombre" 
+                      value={editData.name || ''} 
+                      onChange={(v) => setEditData({ ...editData, name: v })} 
+                    />
+                    <Field 
+                      label="Rol" 
+                      value={editData.role || ''} 
+                      onChange={(v) => setEditData({ ...editData, role: v })} 
+                    />
+                    <div>
+                      <label className="block text-xs font-medium text-text-light mb-1">Texto</label>
+                      <textarea 
+                        value={editData.text || ''} 
+                        onChange={(e) => setEditData({ ...editData, text: e.target.value })} 
+                        rows={3}
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm resize-none"
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => saveEdit(t.id!)}
+                        className="flex-1 bg-primary hover:bg-primary-dark text-white text-xs font-bold py-2 rounded-lg transition-colors"
+                      >
+                        💾 Guardar
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold py-2 rounded-lg transition-colors"
+                      >
+                        ✕ Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // ── Modo visualización ──
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-semibold text-sm text-text">{t.name}</p>
+                        <span className="text-xs text-text-light">— {t.role}</span>
+                      </div>
+                      <p className="text-sm text-text-light italic truncate">&ldquo;{t.text}&rdquo;</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => startEdit(t)}
+                        className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-3 rounded-lg transition-colors"
+                      >
+                        ✎ Editar
+                      </button>
+                      <button
+                        onClick={() => updateApproval(t.id!, false)}
+                        className="text-xs bg-gray-100 hover:bg-gray-200 text-text-light font-medium py-1.5 px-3 rounded-lg transition-colors"
+                      >
+                        Ocultar
+                      </button>
+                      <button
+                        onClick={() => deleteTestimonial(t.id!)}
+                        className="text-xs bg-red-100 hover:bg-red-200 text-red-700 font-medium py-1.5 px-3 rounded-lg transition-colors"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </EditorSection>
     </div>
   );
 }

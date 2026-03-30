@@ -34,6 +34,17 @@ export interface Testimonial {
   photo?: string;
 }
 
+// ── Firestore: testimonials/{id} — submitted by users, moderated by admin ──
+export interface TestimonialSubmission {
+  id?: string;
+  name: string;
+  role: string;
+  text: string;
+  rating: number; // 1–5
+  approved: boolean;
+  createdAt: Date | string;
+}
+
 export interface FAQItem {
   question: string;
   answer: string;
@@ -88,41 +99,34 @@ export interface YESFactorContent {
 
 
 // ── Firestore: siteConfig/courses ──
-export interface CourseSchedule {
-  name: string;
-  days: string;
-  hours: string;
-}
-
-export interface CourseModality {
-  id: string;
-  name: string;
-  description: string;
-  duration: string;
-  schedules: CourseSchedule[];
-  price?: string;
-}
-
-export interface Course {
-  id: string;
-  language: 'ingles' | 'frances';
-  title: string;
-  description: string;
-  levels: string;
-  certification: string;
-  modalities: CourseModality[];
-  benefits: string[];
-  image?: string;
-}
-
 export interface CoursesContent {
   pageTitle: string;
   pageDescription: string;
-  courses: Course[];
   seo: {
     title: string;
     description: string;
   };
+}
+
+// ── Firestore: siteConfig/programs ──
+export interface Program {
+  id: string;
+  title: string;
+  subtitle?: string;      // audience: "Jóvenes-Adultos", "5-11 años"
+  language: 'ingles' | 'frances' | 'ambos';
+  tag?: string;           // "Intensivo", "Sábados", "Viernes", "YES Kids", "GEP"
+  levels?: string;        // "6 Niveles (Año y Medio)"
+  modality?: string;      // "Virtual y/o Presencial Trimestral"
+  intensity?: string;     // "110 horas por nivel"
+  schedules: string[];
+  highlights?: string[];  // bullet points for special programs (GEP, etc.)
+  materials?: string;
+  showMaterials?: boolean; // si true, se muestra en el sitio
+  price?: string;
+  showPrice?: boolean;     // si true, se muestra en el sitio
+  notes?: string;
+  order: number;
+  active: boolean;
 }
 
 // ── Firestore: siteConfig/contact ──
