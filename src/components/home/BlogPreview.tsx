@@ -48,7 +48,28 @@ export default function BlogPreview({ posts }: BlogPreviewProps) {
               href={`/blog/${post.slug}`}
               className="block aspect-[16/9] relative overflow-hidden"
             >
-              {post.coverImage ? (
+              {post.coverType === 'video' && post.coverVideo ? (
+                (() => {
+                  const ytId = post.coverVideo.match(
+                    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/
+                  )?.[1];
+                  const thumb = ytId
+                    ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+                    : post.coverImage ?? null;
+                  return thumb ? (
+                    <>
+                      <Image src={thumb} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <span className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                          <svg className="w-5 h-5 ml-0.5" style={{ color: '#ED1118' }} fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full bg-primary/10 flex items-center justify-center text-4xl">▶️</div>
+                  );
+                })()
+              ) : post.coverImage ? (
                 <Image
                   src={post.coverImage}
                   alt={post.title}

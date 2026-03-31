@@ -2,8 +2,12 @@
 
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { BlogPost } from '@/types';
+
+// Lazy-loaded WebGL background — skipped on SSR to avoid canvas/WebGL issues
+const HeroBackground = dynamic(() => import('./HeroBackground'), { ssr: false });
 
 interface HeroProps {
   hero: {
@@ -22,11 +26,6 @@ const BLUE = '#323D6E';
 export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
   const shouldReduceMotion = useReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isMobile, setIsMobile] = useState(true);
-
-  useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-  }, []);
 
   useEffect(() => {
     if (noticias.length <= 1) return;
@@ -48,64 +47,32 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
   return (
     <section className="relative min-h-[92vh] flex items-center overflow-hidden">
 
-      {/* Base background */}
+      {/* WebGL animated gradient background — replaces CSS blur blobs */}
+      {!shouldReduceMotion ? (
+        <HeroBackground />
+      ) : (
+        // Fallback estático para usuarios con prefers-reduced-motion
+        <div
+          className="absolute inset-0"
+          style={{
+            zIndex: -20,
+            background: 'linear-gradient(150deg, #EEF2FF 0%, #FFFFFF 50%, #F5F7FF 100%)',
+          }}
+        />
+      )}
+
+      {/* Grid pattern estático — CSS puro, sin animación */}
       <div
-        className="absolute inset-0 -z-30"
+        className="absolute inset-0 -z-10 pointer-events-none opacity-[0.10]"
         style={{
-          background:
-            `radial-gradient(1200px 600px at 20% 10%, ${BLUE} 0%, rgba(0,0,0,0) 60%),` +
-            `radial-gradient(900px 600px at 80% 20%, rgba(237,17,24,.22) 0%, rgba(0,0,0,0) 55%),` +
-            `linear-gradient(135deg, #0B1024 0%, #070A12 55%, #05060B 100%)`,
+          backgroundImage:
+            'linear-gradient(to right, rgba(50,61,110,0.22) 1px, transparent 1px), linear-gradient(to bottom, rgba(50,61,110,0.15) 1px, transparent 1px)',
+          backgroundSize: '64px 64px',
+          maskImage: 'radial-gradient(ellipse at 50% 40%, black 0%, transparent 60%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at 50% 40%, black 0%, transparent 60%)',
         }}
       />
 
-      {/* Animated glow blobs */}
-      {!shouldReduceMotion && (
-        <>
-          <motion.div
-            className="absolute -z-20 -top-40 -left-40 h-[520px] w-[520px] rounded-full blur-[50px] sm:blur-[90px] opacity-70"
-            style={{ background: `radial-gradient(circle at 30% 30%, ${BLUE} 0%, rgba(50,61,110,0) 60%)`, willChange: 'transform' }}
-            animate={isMobile ? {} : { x: [0, 60, -10], y: [0, 25, 10], scale: [1, 1.08, 0.98] }}
-            transition={{ duration: 14, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
-          />
-          <motion.div
-            className="absolute -z-20 -bottom-48 -right-48 h-[620px] w-[620px] rounded-full blur-[60px] sm:blur-[110px] opacity-70"
-            style={{ background: `radial-gradient(circle at 70% 60%, ${RED} 0%, rgba(237,17,24,0) 62%)`, willChange: 'transform' }}
-            animate={isMobile ? {} : { x: [0, -50, 15], y: [0, -30, -10], scale: [1, 0.95, 1.06] }}
-            transition={{ duration: 16, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
-          />
-        </>
-      )}
-
-      {/* Grid pattern */}
-      <div className="absolute inset-0 -z-10 opacity-[0.16]">
-        <motion.div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, rgba(255,255,255,0.14) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.10) 1px, transparent 1px)',
-            backgroundSize: '64px 64px',
-            maskImage: 'radial-gradient(ellipse at 50% 40%, black 0%, transparent 62%)',
-            WebkitMaskImage: 'radial-gradient(ellipse at 50% 40%, black 0%, transparent 62%)',
-          }}
-          animate={shouldReduceMotion || isMobile ? {} : { backgroundPosition: ['0px 0px', '0px 120px'] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-        />
-      </div>
-
-      {/* Light sweep */}
-      {!shouldReduceMotion && !isMobile && (
-        <motion.div
-          className="pointer-events-none absolute inset-y-0 left-0 -z-10"
-          style={{
-            width: '100%',
-            willChange: 'transform',
-            background: 'linear-gradient(110deg, transparent 35%, rgba(237,17,24,0.15) 50%, transparent 65%)',
-          }}
-          animate={{ x: ['-100%', '100%'] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      )}
 
       {/* ── Hero partido (hero-split) ── */}
       {noticias.length > 0 ? (
@@ -121,19 +88,24 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
             >
               <div className="inline-flex items-center relative mb-8">
                 <motion.div
-                  className="relative px-5 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.35)] overflow-hidden"
+                  className="relative px-5 py-2 rounded-full overflow-hidden"
+                  style={{
+                    background: 'rgba(50,61,110,0.08)',
+                    border: '1px solid rgba(50,61,110,0.18)',
+                    boxShadow: '0 4px 24px rgba(50,61,110,0.10)',
+                  }}
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: 'spring', stiffness: 250, damping: 18 }}
                 >
                   {!shouldReduceMotion && (
                     <motion.span
                       className="absolute inset-0"
-                      style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.22) 45%, transparent 70%)' }}
+                      style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(50,61,110,0.10) 45%, transparent 70%)' }}
                       animate={{ x: ['-120%', '120%'] }}
                       transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
                     />
                   )}
-                  <span className="relative text-white/90 text-sm font-semibold">
+                  <span className="relative text-sm font-semibold" style={{ color: BLUE }}>
                     🎓 Más de 32 años formando profesionales bilingües en Neiva
                   </span>
                 </motion.div>
@@ -151,8 +123,8 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                       transition={{ delay: 0.12 + i * 0.06, duration: 0.55, ease: 'easeOut' }}
                       className="inline-block mr-3"
                       style={{
-                        color: isEnglish ? RED : isFrench ? '#A7B0FF' : 'white',
-                        textShadow: isEnglish ? '0 18px 60px rgba(237,17,24,0.35)' : '0 18px 60px rgba(80,120,255,0.25)',
+                        color: isEnglish ? RED : isFrench ? BLUE : '#111827',
+                        textShadow: isEnglish ? '0 8px 30px rgba(237,17,24,0.18)' : isFrench ? '0 8px 30px rgba(50,61,110,0.15)' : 'none',
                       }}
                     >
                       {w}
@@ -163,9 +135,9 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
 
               <div className="relative mb-8">
                 <motion.div
-                  className="h-[2px] w-full max-w-xs rounded-full opacity-80"
-                  style={{ background: `linear-gradient(90deg, ${RED} 0%, rgba(167,176,255,0.95) 60%, transparent 100%)` }}
-                  animate={shouldReduceMotion ? {} : { opacity: [0.55, 0.9, 0.6] }}
+                  className="h-[2px] w-full max-w-xs rounded-full opacity-70"
+                  style={{ background: `linear-gradient(90deg, ${RED} 0%, rgba(50,61,110,0.7) 60%, transparent 100%)` }}
+                  animate={shouldReduceMotion ? {} : { opacity: [0.45, 0.75, 0.50] }}
                   transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
                 />
               </div>
@@ -174,7 +146,8 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35, duration: 0.6 }}
-                className="text-lg sm:text-xl text-white/80 max-w-lg mb-10 leading-relaxed"
+                className="text-lg sm:text-xl max-w-lg mb-10 leading-relaxed"
+                style={{ color: '#4B5563' }}
               >
                 {hero.subtitle}
               </motion.p>
@@ -187,7 +160,7 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                   className="relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-lg font-extrabold text-white overflow-hidden"
                   style={{
                     background: `linear-gradient(135deg, ${RED} 0%, rgba(237,17,24,0.85) 40%, rgba(255,255,255,0.10) 140%)`,
-                    boxShadow: '0 18px 60px rgba(237,17,24,0.25)',
+                    boxShadow: '0 12px 40px rgba(237,17,24,0.22)',
                   }}
                 >
                   {!shouldReduceMotion && (
@@ -207,8 +180,13 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                   rel="noopener noreferrer"
                   whileHover={{ y: -2, scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-lg font-extrabold text-white border border-white/20 bg-white/10 backdrop-blur-md overflow-hidden"
-                  style={{ boxShadow: '0 18px 60px rgba(50,61,110,0.28)' }}
+                  className="relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-lg font-extrabold overflow-hidden"
+                  style={{
+                    background: 'white',
+                    border: `1.5px solid rgba(50,61,110,0.18)`,
+                    color: BLUE,
+                    boxShadow: '0 8px 32px rgba(50,61,110,0.12)',
+                  }}
                 >
                   <svg className="relative w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -221,14 +199,15 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.9, duration: 0.6 }}
-                className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/65"
+                className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"
+                style={{ color: '#6B7280' }}
               >
                 <span className="inline-flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: RED }} />
                   Cursos por niveles • Acompañamiento
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#A7B0FF' }} />
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: BLUE }} />
                   Inglés / Francés • Modalidades flexibles
                 </span>
               </motion.div>
@@ -244,14 +223,17 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
               <div className="flex items-center gap-2 mb-4">
                 <span
                   className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest"
-                  style={{ color: RED, background: 'rgba(237,17,24,0.12)', border: '1px solid rgba(237,17,24,0.2)' }}
+                  style={{ color: RED, background: 'rgba(237,17,24,0.10)', border: '1px solid rgba(237,17,24,0.18)' }}
                 >
                   Noticias
                 </span>
-                <span className="text-white/35 text-xs">{activeIndex + 1} / {noticias.length}</span>
+                <span className="text-xs" style={{ color: '#9CA3AF' }}>{activeIndex + 1} / {noticias.length}</span>
               </div>
 
-              <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 backdrop-blur-sm shadow-[0_24px_64px_rgba(0,0,0,0.4)]">
+              <div
+                className="relative overflow-hidden rounded-2xl shadow-[0_16px_48px_rgba(50,61,110,0.12)]"
+                style={{ background: 'white', border: '1px solid rgba(50,61,110,0.10)' }}
+              >
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeIndex}
@@ -260,19 +242,47 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                     exit={{ opacity: 0, x: -30 }}
                     transition={{ duration: 0.4, ease: 'easeOut' }}
                   >
-                    {current.coverImage && (
+                    {(current.coverImage || current.coverVideo) && (
                       <div className="relative aspect-[16/9] overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={current.coverImage}
-                          alt={current.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        {current.coverType === 'video' && current.coverVideo ? (
+                          (() => {
+                            const ytMatch = current.coverVideo.match(
+                              /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/
+                            );
+                            return ytMatch ? (
+                              <iframe
+                                src={`https://www.youtube.com/embed/${ytMatch[1]}?autoplay=0&mute=1&rel=0&modestbranding=1`}
+                                title={current.title}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                className="w-full h-full border-0"
+                              />
+                            ) : (
+                              <video
+                                src={current.coverVideo}
+                                className="w-full h-full object-cover"
+                                autoPlay
+                                muted
+                                loop
+                                playsInline
+                              />
+                            );
+                          })()
+                        ) : (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={current.coverImage}
+                              alt={current.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                          </>
+                        )}
                         {current.category && (
                           <span
                             className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white"
-                            style={{ background: 'rgba(237,17,24,0.75)' }}
+                            style={{ background: 'rgba(237,17,24,0.80)' }}
                           >
                             {current.category}
                           </span>
@@ -284,15 +294,18 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                         href={`/blog/${current.slug}`}
                         className="group block"
                       >
-                        <h3 className="text-white font-bold text-base leading-snug mb-2 group-hover:text-white/80 transition-colors">
+                        <h3 className="font-bold text-base leading-snug mb-2 transition-colors" style={{ color: '#111827' }}>
                           {current.title}
                         </h3>
                         {current.excerpt && (
-                          <p className="text-white/55 text-sm leading-relaxed line-clamp-2">
+                          <p className="text-sm leading-relaxed line-clamp-2" style={{ color: '#6B7280' }}>
                             {current.excerpt}
                           </p>
                         )}
-                        <span className="inline-flex items-center gap-1 mt-3 text-xs font-semibold text-white/40 group-hover:text-white/70 transition-colors">
+                        <span
+                          className="inline-flex items-center gap-1 mt-3 text-xs font-semibold transition-colors"
+                          style={{ color: RED }}
+                        >
                           Leer más →
                         </span>
                       </Link>
@@ -305,7 +318,8 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                 <div className="flex items-center justify-between mt-4 px-1">
                   <button
                     onClick={() => setActiveIndex((activeIndex - 1 + noticias.length) % noticias.length)}
-                    className="h-8 w-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center text-white/70 hover:text-white text-sm"
+                    className="h-8 w-8 rounded-full flex items-center justify-center text-sm transition-colors"
+                    style={{ border: '1px solid rgba(50,61,110,0.18)', background: 'white', color: '#6B7280' }}
                     aria-label="Noticia anterior"
                   >
                     ←
@@ -319,14 +333,15 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                         className="h-1.5 rounded-full transition-all duration-300 focus:outline-none"
                         style={{
                           width: i === activeIndex ? '20px' : '6px',
-                          background: i === activeIndex ? RED : 'rgba(255,255,255,0.3)',
+                          background: i === activeIndex ? RED : 'rgba(50,61,110,0.20)',
                         }}
                       />
                     ))}
                   </div>
                   <button
                     onClick={() => setActiveIndex((activeIndex + 1) % noticias.length)}
-                    className="h-8 w-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center text-white/70 hover:text-white text-sm"
+                    className="h-8 w-8 rounded-full flex items-center justify-center text-sm transition-colors"
+                    style={{ border: '1px solid rgba(50,61,110,0.18)', background: 'white', color: '#6B7280' }}
                     aria-label="Noticia siguiente"
                   >
                     →
@@ -349,19 +364,24 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
           >
             <div className="inline-flex items-center justify-center relative mb-8">
               <motion.div
-                className="relative px-5 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.35)] overflow-hidden"
+                className="relative px-5 py-2 rounded-full overflow-hidden"
+                style={{
+                  background: 'rgba(50,61,110,0.08)',
+                  border: '1px solid rgba(50,61,110,0.18)',
+                  boxShadow: '0 4px 24px rgba(50,61,110,0.10)',
+                }}
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: 'spring', stiffness: 250, damping: 18 }}
               >
                 {!shouldReduceMotion && (
                   <motion.span
                     className="absolute inset-0"
-                    style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.22) 45%, transparent 70%)' }}
+                    style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(50,61,110,0.10) 45%, transparent 70%)' }}
                     animate={{ x: ['-120%', '120%'] }}
                     transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
                   />
                 )}
-                <span className="relative text-white/90 text-sm font-semibold">
+                <span className="relative text-sm font-semibold" style={{ color: BLUE }}>
                   🎓 Más de 32 años formando profesionales bilingües en Neiva
                 </span>
               </motion.div>
@@ -379,8 +399,8 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                     transition={{ delay: 0.12 + i * 0.06, duration: 0.55, ease: 'easeOut' }}
                     className="inline-block mr-3"
                     style={{
-                      color: isEnglish ? RED : isFrench ? '#A7B0FF' : 'white',
-                      textShadow: isEnglish ? '0 18px 60px rgba(237,17,24,0.35)' : '0 18px 60px rgba(80,120,255,0.25)',
+                      color: isEnglish ? RED : isFrench ? BLUE : '#111827',
+                      textShadow: isEnglish ? '0 8px 30px rgba(237,17,24,0.18)' : isFrench ? '0 8px 30px rgba(50,61,110,0.15)' : 'none',
                     }}
                   >
                     {w}
@@ -391,9 +411,9 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
 
             <div className="relative max-w-3xl mx-auto mb-8">
               <motion.div
-                className="h-[2px] w-full rounded-full opacity-80"
-                style={{ background: `linear-gradient(90deg, transparent 0%, ${RED} 35%, rgba(167,176,255,0.95) 65%, transparent 100%)` }}
-                animate={shouldReduceMotion ? {} : { opacity: [0.55, 0.9, 0.6] }}
+                className="h-[2px] w-full rounded-full opacity-70"
+                style={{ background: `linear-gradient(90deg, transparent 0%, ${RED} 35%, rgba(50,61,110,0.7) 65%, transparent 100%)` }}
+                animate={shouldReduceMotion ? {} : { opacity: [0.45, 0.75, 0.50] }}
                 transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
               />
             </div>
@@ -402,7 +422,8 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.6 }}
-              className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed"
+              className="text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
+              style={{ color: '#4B5563' }}
             >
               {hero.subtitle}
             </motion.p>
@@ -415,7 +436,7 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                 className="relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-lg font-extrabold text-white overflow-hidden"
                 style={{
                   background: `linear-gradient(135deg, ${RED} 0%, rgba(237,17,24,0.85) 40%, rgba(255,255,255,0.10) 140%)`,
-                  boxShadow: '0 18px 60px rgba(237,17,24,0.25)',
+                  boxShadow: '0 12px 40px rgba(237,17,24,0.22)',
                 }}
               >
                 {!shouldReduceMotion && (
@@ -435,8 +456,13 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                 rel="noopener noreferrer"
                 whileHover={{ y: -2, scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-lg font-extrabold text-white border border-white/20 bg-white/10 backdrop-blur-md overflow-hidden"
-                style={{ boxShadow: '0 18px 60px rgba(50,61,110,0.28)' }}
+                className="relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-lg font-extrabold overflow-hidden"
+                style={{
+                  background: 'white',
+                  border: `1.5px solid rgba(50,61,110,0.18)`,
+                  color: BLUE,
+                  boxShadow: '0 8px 32px rgba(50,61,110,0.12)',
+                }}
               >
                 <svg className="relative w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -449,18 +475,19 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9, duration: 0.6 }}
-              className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/65"
+              className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm"
+              style={{ color: '#6B7280' }}
             >
               <span className="inline-flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: RED }} />
                 Cursos por niveles • Acompañamiento
               </span>
               <span className="inline-flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#A7B0FF' }} />
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: BLUE }} />
                 Inglés / Francés • Modalidades flexibles
               </span>
               <span className="inline-flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: BLUE }} />
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#9CA3AF' }} />
                 Enfoque práctico • Resultados medibles
               </span>
             </motion.div>
