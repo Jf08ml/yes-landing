@@ -77,7 +77,7 @@ export default async function HomePage() {
       <Features features={home.features} />
       <CoursesPreview />
       <Location contact={contact} />
-      <Testimonials testimonials={home.testimonials} />
+      <Testimonials />
       <YESFactorSection preview={home.yesFactorPreview} />
       <BlogPreview posts={blogPosts} />
       <FAQ faq={home.faq} />

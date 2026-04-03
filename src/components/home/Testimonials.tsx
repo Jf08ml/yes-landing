@@ -5,26 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import Section from '@/components/ui/Section';
 import { db } from '@/lib/firebase';
-import type { Testimonial, TestimonialSubmission } from '@/types';
-
-interface TestimonialsProps {
-  testimonials: Testimonial[];
-}
+import type { TestimonialSubmission } from '@/types';
 
 const ITEMS_PER_PAGE = 3;
 const ROTATION_INTERVAL = 8000;
-
-function toSubmissions(ts: Testimonial[]): TestimonialSubmission[] {
-  return ts.map((t, idx) => ({
-    id: `local-${idx}`,
-    name: t.name,
-    role: t.role,
-    text: t.text,
-    rating: 5,
-    approved: true,
-    createdAt: new Date().toISOString(),
-  }));
-}
 
 function StarDisplay({ rating = 5 }: { rating?: number }) {
   return (
@@ -235,7 +219,7 @@ function TestimonialModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export default function Testimonials({ testimonials }: TestimonialsProps) {
+export default function Testimonials() {
   const [modalOpen, setModalOpen] = useState(false);
   const [allTestimonials, setAllTestimonials] = useState<TestimonialSubmission[]>([]);
   const [displayed, setDisplayed] = useState<TestimonialSubmission[]>([]);
@@ -243,30 +227,21 @@ export default function Testimonials({ testimonials }: TestimonialsProps) {
 
   useEffect(() => {
     const load = async () => {
-      let list: TestimonialSubmission[];
-
-      if (!db) {
-        list = toSubmissions(testimonials);
-      } else {
-        try {
-          const snap = await getDocs(query(collection(db, 'testimonials'), orderBy('createdAt', 'desc')));
-          const fromFirebase = snap.docs
-            .map(d => ({ id: d.id, ...d.data() } as TestimonialSubmission))
-            .filter(t => t.approved === true);
-          list = fromFirebase.length > 0 ? fromFirebase : toSubmissions(testimonials);
-        } catch {
-          list = toSubmissions(testimonials);
-        }
+      if (!db) return;
+      try {
+        const snap = await getDocs(query(collection(db, 'testimonials'), orderBy('createdAt', 'desc')));
+        const list = snap.docs
+          .map(d => ({ id: d.id, ...d.data() } as TestimonialSubmission))
+          .filter(t => t.approved === true);
+        const shuffled = [...list].sort(() => Math.random() - 0.5);
+        setAllTestimonials(shuffled);
+        setDisplayed(shuffled.slice(0, ITEMS_PER_PAGE));
+      } catch {
+        // sin testimonios aprobados aún
       }
-
-      // Shuffle once
-      const shuffled = [...list].sort(() => Math.random() - 0.5);
-      setAllTestimonials(shuffled);
-      setDisplayed(shuffled.slice(0, ITEMS_PER_PAGE));
     };
-
     load();
-  }, [testimonials]);
+  }, []);
 
   // Auto-rotate when there are more than ITEMS_PER_PAGE
   useEffect(() => {

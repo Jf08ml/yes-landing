@@ -77,14 +77,21 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
       {/* ── Hero partido (hero-split) ── */}
       {noticias.length > 0 ? (
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
 
             {/* Columna izquierda */}
             <motion.div
               initial={{ opacity: 0, x: -24 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.7, ease: 'easeOut' }}
-              className="text-left"
+              className="text-left relative"
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '24px',
+                padding: '2.5rem 2rem',
+                boxShadow: '0 4px 40px rgba(50,61,110,0.08)',
+                border: '1px solid rgba(255,255,255,0.80)',
+              }}
             >
               <div className="inline-flex items-center relative mb-8">
                 <motion.div
@@ -147,7 +154,7 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35, duration: 0.6 }}
                 className="text-lg sm:text-xl max-w-lg mb-10 leading-relaxed"
-                style={{ color: '#4B5563' }}
+                style={{ color: '#374151' }}
               >
                 {hero.subtitle}
               </motion.p>
@@ -200,7 +207,7 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.9, duration: 0.6 }}
                 className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"
-                style={{ color: '#6B7280' }}
+                style={{ color: '#4B5563' }}
               >
                 <span className="inline-flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: RED }} />

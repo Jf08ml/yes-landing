@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(node -e \"const w = require\\('world-atlas/countries-110m.json'\\); console.log\\(Object.keys\\(w\\), Object.keys\\(w.objects\\)\\)\")"
     ]
   }
 }

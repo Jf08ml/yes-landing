@@ -69,23 +69,6 @@ export const mockHome: HomeContent = {
       levels: 'A1 – B2',
     },
   ],
-  testimonials: [
-    {
-      name: 'María Fernanda López',
-      role: 'Estudiante de Inglés Intensivo',
-      text: 'Gracias a YES logré el nivel B1 en menos de un año. La metodología 70/30 te obliga a hablar desde el primer día. ¡Lo recomiendo totalmente!',
-    },
-    {
-      name: 'Carlos Andrés Méndez',
-      role: 'Profesional — Curso Personalizado',
-      text: 'Necesitaba inglés para mi trabajo y YES me ofreció horarios flexibles. Los profesores son excelentes y las clases son muy dinámicas.',
-    },
-    {
-      name: 'Laura Valentina Rojas',
-      role: 'Estudiante de Francés',
-      text: 'Siempre quise aprender francés y en YES encontré el mejor programa. En Neiva no hay otro instituto con esta calidad.',
-    },
-  ],
   faq: [
     {
       question: '¿Qué niveles de inglés ofrecen?',

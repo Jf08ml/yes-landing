@@ -54,6 +54,15 @@ export default function AdminPage() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [testimonialSubmissions, setTestimonialSubmissions] = useState<TestimonialSubmission[]>([]);
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+  // activeModal values: 'home-seo' | 'home-hero' | 'home-stats' | 'home-trustbar' | 'home-ctafinal'
+  //   | 'home-yesfactorpreview' | 'home-features' | 'home-testimonials' | 'home-faq'
+  //   | 'yf-info' | 'yf-winner-{idx}' | 'yf-newcat'
+  //   | 'blog-content' | 'blog-{postId}'
+  //   | 'contact-info' | 'contact-social'
+  //   | 'courses-meta' | 'prog-{progId}'
+  //   | 'testimonial-{id}'
+  const closeModal = () => setActiveModal(null);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !auth) {
@@ -289,184 +298,180 @@ export default function AdminPage() {
           })}
         </div>
 
-        {/* Home editor */}
+        {/* ── HOME ── */}
         {activeTab === 'home' && home && (
-          <div className="space-y-6">
-            <EditorSection title="SEO (metadatos de la página)">
+          <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <SectionCard title="SEO" icon="🔍" desc={home.seo.title} onEdit={() => setActiveModal('home-seo')} />
+            <SectionCard title="Hero" icon="🎯" desc={home.hero.title} onEdit={() => setActiveModal('home-hero')} />
+            <SectionCard title="Stats" icon="📊" badge={`${home.stats.length}`} desc={home.stats.map(s => `${s.value} ${s.label}`).join(' · ')} onEdit={() => setActiveModal('home-stats')} />
+            <SectionCard title="Trust Bar" icon="✅" badge={`${home.trustBar.length}`} desc={home.trustBar.join(' · ')} onEdit={() => setActiveModal('home-trustbar')} />
+            <SectionCard title="CTA Final" icon="📣" desc={home.ctaFinal.title} onEdit={() => setActiveModal('home-ctafinal')} />
+            <SectionCard title="YES Factor preview" icon="⭐" desc={home.yesFactorPreview.title} onEdit={() => setActiveModal('home-yesfactorpreview')} />
+            <SectionCard title="Features" icon="🧩" badge={`${home.features.length}`} desc={home.features.map(f => f.title).join(', ')} onEdit={() => setActiveModal('home-features')} />
+            <SectionCard title="FAQ" icon="❓" badge={`${home.faq.length}`} desc={home.faq.map(f => f.question).slice(0,2).join(' · ')} onEdit={() => setActiveModal('home-faq')} />
+          </div>
+
+          {/* Modal SEO */}
+          {activeModal === 'home-seo' && (
+            <Modal title="SEO — Metadatos de la página" onClose={closeModal}>
               <Field label="Título SEO" value={home.seo.title} onChange={(v) => setHome({ ...home, seo: { ...home.seo, title: v } })} />
               <Field label="Descripción SEO" value={home.seo.description} onChange={(v) => setHome({ ...home, seo: { ...home.seo, description: v } })} textarea />
-            </EditorSection>
+            </Modal>
+          )}
 
-            <EditorSection title="Hero">
+          {/* Modal Hero */}
+          {activeModal === 'home-hero' && (
+            <Modal title="Hero" onClose={closeModal}>
               <Field label="Título" value={home.hero.title} onChange={(v) => setHome({ ...home, hero: { ...home.hero, title: v } })} />
               <Field label="Subtítulo" value={home.hero.subtitle} onChange={(v) => setHome({ ...home, hero: { ...home.hero, subtitle: v } })} textarea />
               <Field label="CTA texto" value={home.hero.ctaText} onChange={(v) => setHome({ ...home, hero: { ...home.hero, ctaText: v } })} />
               <Field label="CTA WhatsApp texto" value={home.hero.ctaWhatsappText} onChange={(v) => setHome({ ...home, hero: { ...home.hero, ctaWhatsappText: v } })} />
-            </EditorSection>
+            </Modal>
+          )}
 
-            <EditorSection title={`Stats (${home.stats.length})`}>
-              {home.stats.map((s, i) => (
-                <div key={i} className="flex gap-2 items-start bg-surface rounded-lg p-3">
-                  <div className="flex-1 grid grid-cols-2 gap-2">
-                    <Field label="Valor (ej: 32+)" value={s.value} onChange={(v) => {
-                      const stats = [...home.stats]; stats[i] = { ...s, value: v }; setHome({ ...home, stats });
-                    }} />
-                    <Field label="Etiqueta (ej: Años)" value={s.label} onChange={(v) => {
-                      const stats = [...home.stats]; stats[i] = { ...s, label: v }; setHome({ ...home, stats });
-                    }} />
+          {/* Modal Stats */}
+          {activeModal === 'home-stats' && (
+            <Modal title="Stats" onClose={closeModal} size="sm">
+              <table className="w-full text-sm">
+                <thead><tr className="border-b border-gray-100">
+                  <th className="text-left pb-2 text-xs font-bold text-text-light uppercase tracking-wider">Valor</th>
+                  <th className="text-left pb-2 text-xs font-bold text-text-light uppercase tracking-wider px-2">Etiqueta</th>
+                  <th className="w-8"></th>
+                </tr></thead>
+                <tbody className="divide-y divide-gray-50">
+                  {home.stats.map((s, i) => (
+                    <tr key={i} className="group">
+                      <td className="py-1.5 pr-2">
+                        <input value={s.value} onChange={(e) => { const stats = [...home.stats]; stats[i] = { ...s, value: e.target.value }; setHome({ ...home, stats }); }}
+                          className="w-full px-2 py-1 rounded border border-gray-200 focus:border-primary outline-none text-sm font-medium" placeholder="32+" />
+                      </td>
+                      <td className="py-1.5 px-2">
+                        <input value={s.label} onChange={(e) => { const stats = [...home.stats]; stats[i] = { ...s, label: e.target.value }; setHome({ ...home, stats }); }}
+                          className="w-full px-2 py-1 rounded border border-gray-200 focus:border-primary outline-none text-sm text-text-light" placeholder="Años" />
+                      </td>
+                      <td className="py-1.5 text-center">
+                        <button onClick={() => setHome({ ...home, stats: home.stats.filter((_, j) => j !== i) })} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 text-xs transition-opacity">✕</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button onClick={() => setHome({ ...home, stats: [...home.stats, { value: '', label: '' }] })} className="text-primary text-sm font-medium hover:underline">+ Agregar stat</button>
+            </Modal>
+          )}
+
+          {/* Modal Trust Bar */}
+          {activeModal === 'home-trustbar' && (
+            <Modal title="Trust Bar" onClose={closeModal} size="sm">
+              <p className="text-xs text-text-light">Píldoras de confianza bajo el hero.</p>
+              <div className="space-y-2">
+                {home.trustBar.map((item, i) => (
+                  <div key={i} className="flex gap-2 items-center group">
+                    <input type="text" value={item}
+                      onChange={(e) => { const trustBar = [...home.trustBar]; trustBar[i] = e.target.value; setHome({ ...home, trustBar }); }}
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm" />
+                    <button onClick={() => setHome({ ...home, trustBar: home.trustBar.filter((_, j) => j !== i) })}
+                      className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 text-xs px-1 transition-opacity">✕</button>
                   </div>
-                  <button onClick={() => setHome({ ...home, stats: home.stats.filter((_, j) => j !== i) })} className="text-red-400 hover:text-red-600 text-xs mt-2">✕</button>
-                </div>
-              ))}
-              <button onClick={() => setHome({ ...home, stats: [...home.stats, { value: '', label: '' }] })} className="text-primary text-sm font-medium hover:underline">
-                + Agregar stat
-              </button>
-            </EditorSection>
+                ))}
+              </div>
+              <button onClick={() => setHome({ ...home, trustBar: [...home.trustBar, ''] })} className="text-primary text-sm font-medium hover:underline">+ Agregar ítem</button>
+            </Modal>
+          )}
 
-            <EditorSection title={`Trust Bar (${home.trustBar.length})`}>
-              <p className="text-xs text-text-light mb-2">Píldoras de texto en el banner de confianza bajo el hero.</p>
-              {home.trustBar.map((item, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={item}
-                    onChange={(e) => {
-                      const trustBar = [...home.trustBar]; trustBar[i] = e.target.value; setHome({ ...home, trustBar });
-                    }}
-                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm"
-                  />
-                  <button onClick={() => setHome({ ...home, trustBar: home.trustBar.filter((_, j) => j !== i) })} className="text-red-400 hover:text-red-600 text-xs px-1">✕</button>
-                </div>
-              ))}
-              <button onClick={() => setHome({ ...home, trustBar: [...home.trustBar, ''] })} className="text-primary text-sm font-medium hover:underline">
-                + Agregar ítem
-              </button>
-            </EditorSection>
-
-            <EditorSection title="CTA Final">
+          {/* Modal CTA Final */}
+          {activeModal === 'home-ctafinal' && (
+            <Modal title="CTA Final" onClose={closeModal}>
               <Field label="Título" value={home.ctaFinal.title} onChange={(v) => setHome({ ...home, ctaFinal: { ...home.ctaFinal, title: v } })} />
               <Field label="Subtítulo" value={home.ctaFinal.subtitle} onChange={(v) => setHome({ ...home, ctaFinal: { ...home.ctaFinal, subtitle: v } })} textarea />
-              <Field label="CTA texto" value={home.ctaFinal.ctaText} onChange={(v) => setHome({ ...home, ctaFinal: { ...home.ctaFinal, ctaText: v } })} />
-            </EditorSection>
+              <Field label="Texto del botón" value={home.ctaFinal.ctaText} onChange={(v) => setHome({ ...home, ctaFinal: { ...home.ctaFinal, ctaText: v } })} />
+            </Modal>
+          )}
 
-            <EditorSection title="Preview YES Factor (Home)">
+          {/* Modal YES Factor preview */}
+          {activeModal === 'home-yesfactorpreview' && (
+            <Modal title="YES Factor — Preview (Home)" onClose={closeModal}>
               <Field label="Título" value={home.yesFactorPreview.title} onChange={(v) => setHome({ ...home, yesFactorPreview: { ...home.yesFactorPreview, title: v } })} />
               <Field label="Descripción" value={home.yesFactorPreview.description} onChange={(v) => setHome({ ...home, yesFactorPreview: { ...home.yesFactorPreview, description: v } })} textarea />
               <Field label="Texto botón" value={home.yesFactorPreview.ctaText} onChange={(v) => setHome({ ...home, yesFactorPreview: { ...home.yesFactorPreview, ctaText: v } })} />
-            </EditorSection>
+            </Modal>
+          )}
 
-            <EditorSection title={`Features (${home.features.length})`}>
-              {home.features.map((f, i) => (
-                <div key={i} className="flex gap-2 items-start bg-surface rounded-lg p-3">
-                  <div className="flex-1 space-y-2">
-                    <Field label="Ícono" value={f.icon} onChange={(v) => {
-                      const features = [...home.features];
-                      features[i] = { ...f, icon: v };
-                      setHome({ ...home, features });
-                    }} />
-                    <Field label="Título" value={f.title} onChange={(v) => {
-                      const features = [...home.features];
-                      features[i] = { ...f, title: v };
-                      setHome({ ...home, features });
-                    }} />
-                    <Field label="Descripción" value={f.description} onChange={(v) => {
-                      const features = [...home.features];
-                      features[i] = { ...f, description: v };
-                      setHome({ ...home, features });
-                    }} textarea />
+          {/* Modal Features */}
+          {activeModal === 'home-features' && (
+            <Modal title={`Features (${home.features.length})`} onClose={closeModal} size="lg">
+              <div className="space-y-4">
+                {home.features.map((f, i) => (
+                  <div key={i} className="border border-gray-200 rounded-xl p-4 space-y-3 relative">
+                    <button onClick={() => setHome({ ...home, features: home.features.filter((_, j) => j !== i) })}
+                      className="absolute top-3 right-3 text-red-400 hover:text-red-600 text-xs font-bold">✕</button>
+                    <div className="grid grid-cols-4 gap-3 pr-6">
+                      <Field label="Ícono" value={f.icon} onChange={(v) => { const features = [...home.features]; features[i] = { ...f, icon: v }; setHome({ ...home, features }); }} />
+                      <div className="col-span-3"><Field label="Título" value={f.title} onChange={(v) => { const features = [...home.features]; features[i] = { ...f, title: v }; setHome({ ...home, features }); }} /></div>
+                    </div>
+                    <Field label="Descripción" value={f.description} onChange={(v) => { const features = [...home.features]; features[i] = { ...f, description: v }; setHome({ ...home, features }); }} textarea />
                   </div>
-                  <button onClick={() => {
-                    const features = home.features.filter((_, j) => j !== i);
-                    setHome({ ...home, features });
-                  }} className="text-red-400 hover:text-red-600 text-xs mt-2">✕</button>
-                </div>
-              ))}
-              <button onClick={() => setHome({ ...home, features: [...home.features, { icon: '⭐', title: '', description: '' }] })} className="text-primary text-sm font-medium hover:underline">
-                + Agregar feature
-              </button>
-            </EditorSection>
+                ))}
+              </div>
+              <button onClick={() => setHome({ ...home, features: [...home.features, { icon: '⭐', title: '', description: '' }] })}
+                className="text-primary text-sm font-medium hover:underline">+ Agregar feature</button>
+            </Modal>
+          )}
 
-            <EditorSection title={`Testimonios (${home.testimonials.length})`}>
-              {home.testimonials.map((t, i) => (
-                <div key={i} className="flex gap-2 items-start bg-surface rounded-lg p-3">
-                  <div className="flex-1 space-y-2">
-                    <Field label="Nombre" value={t.name} onChange={(v) => {
-                      const testimonials = [...home.testimonials];
-                      testimonials[i] = { ...t, name: v };
-                      setHome({ ...home, testimonials });
-                    }} />
-                    <Field label="Rol" value={t.role} onChange={(v) => {
-                      const testimonials = [...home.testimonials];
-                      testimonials[i] = { ...t, role: v };
-                      setHome({ ...home, testimonials });
-                    }} />
-                    <Field label="Texto" value={t.text} onChange={(v) => {
-                      const testimonials = [...home.testimonials];
-                      testimonials[i] = { ...t, text: v };
-                      setHome({ ...home, testimonials });
-                    }} textarea />
+          {/* Modal FAQ */}
+          {activeModal === 'home-faq' && (
+            <Modal title={`FAQ (${home.faq.length})`} onClose={closeModal} size="lg">
+              <div className="space-y-4">
+                {home.faq.map((f, i) => (
+                  <div key={i} className="border border-gray-200 rounded-xl p-4 space-y-3 relative">
+                    <button onClick={() => setHome({ ...home, faq: home.faq.filter((_, j) => j !== i) })}
+                      className="absolute top-3 right-3 text-red-400 hover:text-red-600 text-xs font-bold">✕</button>
+                    <div className="pr-6"><Field label="Pregunta" value={f.question} onChange={(v) => { const faq = [...home.faq]; faq[i] = { ...f, question: v }; setHome({ ...home, faq }); }} /></div>
+                    <Field label="Respuesta" value={f.answer} onChange={(v) => { const faq = [...home.faq]; faq[i] = { ...f, answer: v }; setHome({ ...home, faq }); }} textarea />
                   </div>
-                  <button onClick={() => {
-                    const testimonials = home.testimonials.filter((_, j) => j !== i);
-                    setHome({ ...home, testimonials });
-                  }} className="text-red-400 hover:text-red-600 text-xs mt-2">✕</button>
-                </div>
-              ))}
-              <button onClick={() => setHome({ ...home, testimonials: [...home.testimonials, { name: '', role: '', text: '' }] })} className="text-primary text-sm font-medium hover:underline">
-                + Agregar testimonio
-              </button>
-            </EditorSection>
-
-            <EditorSection title={`FAQ (${home.faq.length})`}>
-              {home.faq.map((f, i) => (
-                <div key={i} className="flex gap-2 items-start bg-surface rounded-lg p-3">
-                  <div className="flex-1 space-y-2">
-                    <Field label="Pregunta" value={f.question} onChange={(v) => {
-                      const faq = [...home.faq];
-                      faq[i] = { ...f, question: v };
-                      setHome({ ...home, faq });
-                    }} />
-                    <Field label="Respuesta" value={f.answer} onChange={(v) => {
-                      const faq = [...home.faq];
-                      faq[i] = { ...f, answer: v };
-                      setHome({ ...home, faq });
-                    }} textarea />
-                  </div>
-                  <button onClick={() => {
-                    const faq = home.faq.filter((_, j) => j !== i);
-                    setHome({ ...home, faq });
-                  }} className="text-red-400 hover:text-red-600 text-xs mt-2">✕</button>
-                </div>
-              ))}
-              <button onClick={() => setHome({ ...home, faq: [...home.faq, { question: '', answer: '' }] })} className="text-primary text-sm font-medium hover:underline">
-                + Agregar FAQ
-              </button>
-            </EditorSection>
-          </div>
+                ))}
+              </div>
+              <button onClick={() => setHome({ ...home, faq: [...home.faq, { question: '', answer: '' }] })}
+                className="text-primary text-sm font-medium hover:underline">+ Agregar FAQ</button>
+            </Modal>
+          )}
+          </>
         )}
 
-        {/* Courses + Programs editor */}
+
+        {/* ── COURSES ── */}
         {activeTab === 'courses' && (
-          <div className="space-y-6">
-            {/* Page metadata */}
+          <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             {courses && (
-              <EditorSection title="Texto de la página de Cursos">
-                <Field label="Título principal" value={courses.pageTitle} onChange={(v) => setCourses({ ...courses, pageTitle: v })} />
-                <Field label="Descripción" value={courses.pageDescription} onChange={(v) => setCourses({ ...courses, pageDescription: v })} textarea />
-                <Field label="Título SEO" value={courses.seo.title} onChange={(v) => setCourses({ ...courses, seo: { ...courses.seo, title: v } })} />
-                <Field label="Descripción SEO" value={courses.seo.description} onChange={(v) => setCourses({ ...courses, seo: { ...courses.seo, description: v } })} textarea />
-              </EditorSection>
+              <SectionCard title="Texto de la página" icon="📄" desc={courses.pageTitle} onEdit={() => setActiveModal('courses-meta')} />
             )}
-
-            {/* Programs CRUD */}
-            <ProgramsEditor programs={programs} onChange={setPrograms} />
           </div>
+
+          <ProgramsEditor programs={programs} onChange={setPrograms} onEditModal={(id) => setActiveModal(`prog-${id}`)} activeModal={activeModal} closeModal={closeModal} />
+
+          {activeModal === 'courses-meta' && courses && (
+            <Modal title="Página de Cursos — Metadatos" onClose={closeModal}>
+              <Field label="Título principal" value={courses.pageTitle} onChange={(v) => setCourses({ ...courses, pageTitle: v })} />
+              <Field label="Descripción" value={courses.pageDescription} onChange={(v) => setCourses({ ...courses, pageDescription: v })} textarea />
+              <Field label="Título SEO" value={courses.seo.title} onChange={(v) => setCourses({ ...courses, seo: { ...courses.seo, title: v } })} />
+              <Field label="Descripción SEO" value={courses.seo.description} onChange={(v) => setCourses({ ...courses, seo: { ...courses.seo, description: v } })} textarea />
+            </Modal>
+          )}
+          </>
         )}
 
-        {/* Contact editor */}
+        {/* ── CONTACT ── */}
         {activeTab === 'contact' && contact && (
-          <div className="space-y-6">
-            <EditorSection title="Datos de contacto">
+          <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <SectionCard title="Datos de contacto" icon="📞" desc={`${contact.phone} · ${contact.email}`} onEdit={() => setActiveModal('contact-info')} />
+            <SectionCard title="Redes sociales" icon="📱" badge={`${contact.social.length}`} desc={contact.social.map(s => s.label).join(' · ')} onEdit={() => setActiveModal('contact-social')} />
+          </div>
+
+          {activeModal === 'contact-info' && (
+            <Modal title="Datos de contacto" onClose={closeModal} size="md">
               <Field label="WhatsApp" value={contact.whatsapp} onChange={(v) => setContact({ ...contact, whatsapp: v })} />
               <Field label="URL Pagos en línea" value={contact.paymentsUrl || ''} onChange={(v) => setContact({ ...contact, paymentsUrl: v })} />
               <Field label="Teléfono" value={contact.phone} onChange={(v) => setContact({ ...contact, phone: v })} />
@@ -476,343 +481,371 @@ export default function AdminPage() {
               <Field label="Región" value={contact.region} onChange={(v) => setContact({ ...contact, region: v })} />
               <Field label="Link a Google Maps" value={contact.mapLink} onChange={(v) => setContact({ ...contact, mapLink: v })} />
               <Field label="Embed mapa (URL iframe)" value={contact.mapEmbed || ''} onChange={(v) => setContact({ ...contact, mapEmbed: v })} />
-            </EditorSection>
-            <EditorSection title="Redes sociales">
-              {contact.social.map((s, i) => (
-                <div key={i} className="flex gap-2 items-start bg-surface rounded-lg p-3">
-                  <div className="flex-1 space-y-2">
-                    <div className="space-y-1">
-                      <label className="block text-xs font-medium text-text-light">Plataforma</label>
-                      <select
-                        value={s.platform}
+            </Modal>
+          )}
+
+          {activeModal === 'contact-social' && (
+            <Modal title="Redes sociales" onClose={closeModal} size="md">
+              <div className="space-y-4">
+                {contact.social.map((s, i) => (
+                  <div key={i} className="border border-gray-200 rounded-xl p-4 space-y-3 relative">
+                    <button onClick={() => setContact({ ...contact, social: contact.social.filter((_, idx) => idx !== i) })}
+                      className="absolute top-3 right-3 text-red-400 hover:text-red-600 text-sm font-bold">✕</button>
+                    <div className="pr-6">
+                      <label className="block text-xs font-medium text-text-light mb-1">Plataforma</label>
+                      <select value={s.platform}
                         onChange={(e) => {
-                          const labels: Record<string, string> = { facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube' };
-                          const social = [...contact.social];
-                          social[i] = { ...s, platform: e.target.value, label: labels[e.target.value] || e.target.value };
+                          const lbls: Record<string, string> = { facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube' };
+                          const social = [...contact.social]; social[i] = { ...s, platform: e.target.value, label: lbls[e.target.value] || e.target.value };
                           setContact({ ...contact, social });
                         }}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm bg-white"
-                      >
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm bg-white">
                         <option value="facebook">Facebook</option>
                         <option value="instagram">Instagram</option>
                         <option value="tiktok">TikTok</option>
                         <option value="youtube">YouTube</option>
                       </select>
                     </div>
-                    <Field label="URL" value={s.url} onChange={(v) => {
-                      const social = [...contact.social]; social[i] = { ...s, url: v };
-                      setContact({ ...contact, social });
-                    }} />
+                    <Field label="URL" value={s.url} onChange={(v) => { const social = [...contact.social]; social[i] = { ...s, url: v }; setContact({ ...contact, social }); }} />
                   </div>
-                  <button
-                    onClick={() => {
-                      const social = contact.social.filter((_, idx) => idx !== i);
-                      setContact({ ...contact, social });
-                    }}
-                    className="mt-6 text-red-400 hover:text-red-600 text-lg font-bold px-1"
-                    title="Eliminar"
-                  >×</button>
-                </div>
-              ))}
-              <button
-                onClick={() => setContact({ ...contact, social: [...contact.social, { platform: 'instagram', label: 'Instagram', url: '' }] })}
-                className="text-sm text-primary font-semibold hover:underline"
-              >
-                + Añadir red social
-              </button>
-            </EditorSection>
-          </div>
+                ))}
+              </div>
+              <button onClick={() => setContact({ ...contact, social: [...contact.social, { platform: 'instagram', label: 'Instagram', url: '' }] })}
+                className="text-primary text-sm font-medium hover:underline">+ Añadir red social</button>
+            </Modal>
+          )}
+          </>
         )}
 
-        {/* YES Factor editor */}
+        {/* ── YES FACTOR ── */}
         {activeTab === 'yesFactor' && yesFactor && (
-          <div className="space-y-6">
-            <EditorSection title="Página YES Factor">
+          <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <SectionCard title="Información general" icon="⭐"
+              desc={`${yesFactor.title} · Inscripciones: ${yesFactor.registrationStatus === 'open' ? 'Abiertas' : 'Cerradas'}`}
+              onEdit={() => setActiveModal('yf-info')} />
+            <SectionCard title="Ganadores" icon="🏆" badge={`${yesFactor.winners.length}`}
+              desc={Array.from(new Set(yesFactor.winners.map(w => w.category).filter(Boolean))).join(' · ')}
+              onEdit={() => setActiveModal('yf-winners')} />
+          </div>
+
+          {/* Modal info general */}
+          {activeModal === 'yf-info' && (
+            <Modal title="YES Factor — Información general" onClose={closeModal}>
               <Field label="Título" value={yesFactor.title} onChange={(v) => setYesFactor({ ...yesFactor, title: v })} />
               <Field label="Descripción" value={yesFactor.description} onChange={(v) => setYesFactor({ ...yesFactor, description: v })} textarea />
               <Field label="URL Video (opcional)" value={yesFactor.videoUrl || ''} onChange={(v) => setYesFactor({ ...yesFactor, videoUrl: v })} />
               <Field label="URL Reglamento (PDF)" value={yesFactor.rulesUrl || ''} onChange={(v) => setYesFactor({ ...yesFactor, rulesUrl: v })} />
               <div className="space-y-1">
                 <label className="block text-xs font-medium text-text-light">Estado de inscripción</label>
-                <select 
-                  value={yesFactor.registrationStatus} 
+                <select value={yesFactor.registrationStatus}
                   onChange={(e) => setYesFactor({ ...yesFactor, registrationStatus: e.target.value as 'open' | 'closed' })}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm bg-white"
-                >
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm bg-white">
                   <option value="open">Abierto</option>
                   <option value="closed">Cerrado</option>
                 </select>
               </div>
               <Field label="URL Formulario / WhatsApp" value={yesFactor.registrationUrl || ''} onChange={(v) => setYesFactor({ ...yesFactor, registrationUrl: v })} />
-            </EditorSection>
+            </Modal>
+          )}
 
-            <EditorSection title={`Ganadores (${yesFactor.winners.length})`}>
-              {yesFactor.winners.map((w, i) => (
-                <div key={i} className="flex gap-2 items-start bg-surface rounded-lg p-3">
-                  <div className="flex-1 space-y-2">
-                    <Field label="Nombre" value={w.name} onChange={(v) => {
-                      const winners = [...yesFactor.winners];
-                      winners[i] = { ...w, name: v };
-                      setYesFactor({ ...yesFactor, winners });
-                    }} />
-                    <Field label="Categoría" value={w.category} onChange={(v) => {
-                      const winners = [...yesFactor.winners];
-                      winners[i] = { ...w, category: v };
-                      setYesFactor({ ...yesFactor, winners });
-                    }} />
-                    <Field label="Puesto (ej: 1st Place)" value={w.place} onChange={(v) => {
-                      const winners = [...yesFactor.winners];
-                      winners[i] = { ...w, place: v };
-                      setYesFactor({ ...yesFactor, winners });
-                    }} />
-                  </div>
-                  <button onClick={() => {
-                    const winners = yesFactor.winners.filter((_, j) => j !== i);
-                    setYesFactor({ ...yesFactor, winners });
-                  }} className="text-red-400 hover:text-red-600 text-xs mt-2">✕</button>
+          {/* Modal ganadores — tabla por categoría */}
+          {activeModal === 'yf-winners' && (() => {
+            const categories = Array.from(new Set(yesFactor.winners.map(w => w.category).filter(Boolean)));
+            const uncategorized = yesFactor.winners.filter(w => !w.category);
+            const allGroups: { cat: string; indices: number[] }[] = [
+              ...categories.map(cat => ({ cat, indices: yesFactor.winners.map((w, i) => w.category === cat ? i : -1).filter(i => i !== -1) })),
+              ...(uncategorized.length > 0 ? [{ cat: '', indices: yesFactor.winners.map((w, i) => !w.category ? i : -1).filter(i => i !== -1) }] : []),
+            ];
+            return (
+              <Modal title={`Ganadores (${yesFactor.winners.length})`} onClose={closeModal} size="xl">
+                <div className="space-y-6">
+                  {allGroups.map(({ cat, indices }) => (
+                    <div key={cat || '__none__'} className="border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="flex items-center justify-between bg-primary/5 px-4 py-2 border-b border-gray-200">
+                        <span className="text-xs font-black uppercase tracking-widest text-primary">{cat || 'Sin categoría'}</span>
+                        <button onClick={() => setYesFactor({ ...yesFactor, winners: [...yesFactor.winners, { name: '', category: cat, place: '' }] })}
+                          className="text-primary text-xs font-medium hover:underline">+ Ganador</button>
+                      </div>
+                      <table className="w-full text-sm">
+                        <thead><tr className="border-b border-gray-100 bg-gray-50/50">
+                          <th className="text-left px-3 py-2 text-xs font-bold text-text-light uppercase tracking-wider w-12">Foto</th>
+                          <th className="text-left px-3 py-2 text-xs font-bold text-text-light uppercase tracking-wider">Nombre</th>
+                          <th className="text-left px-3 py-2 text-xs font-bold text-text-light uppercase tracking-wider w-28 hidden md:table-cell">Puesto</th>
+                          <th className="text-left px-3 py-2 text-xs font-bold text-text-light uppercase tracking-wider w-16 hidden md:table-cell">Año</th>
+                          <th className="px-3 py-2 w-20"></th>
+                        </tr></thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {indices.map((i) => {
+                            const w = yesFactor.winners[i];
+                            return (
+                              <tr key={i} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-3 py-2">
+                                  {w.image
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    ? <img src={w.image} alt={w.name} className="w-8 h-8 rounded-full object-cover border border-gray-200" />
+                                    : <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm">🏆</div>}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <p className="font-medium text-text text-sm">{w.name || <span className="text-gray-300 italic text-xs">Sin nombre</span>}</p>
+                                  {w.videoUrl && <span className="text-[10px] text-red-500 font-semibold">▶ Video</span>}
+                                </td>
+                                <td className="px-3 py-2 text-xs text-text-light hidden md:table-cell">{w.place}</td>
+                                <td className="px-3 py-2 text-xs text-text-light hidden md:table-cell">{w.year}</td>
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-1 justify-end">
+                                    <button onClick={() => setActiveModal(`yf-winner-${i}`)}
+                                      className="text-xs font-semibold px-2 py-1 rounded-lg bg-indigo-50 text-primary hover:bg-indigo-100 transition-colors">Editar</button>
+                                    <button onClick={() => setYesFactor({ ...yesFactor, winners: yesFactor.winners.filter((_, j) => j !== i) })}
+                                      className="text-xs font-semibold px-2 py-1 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors">✕</button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => { const newCat = prompt('Nombre de la nueva categoría (ej: YES FACTOR KIDS):'); if (!newCat?.trim()) return; setYesFactor({ ...yesFactor, winners: [...yesFactor.winners, { name: '', category: newCat.trim(), place: '' }] }); }}
+                    className="w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-primary hover:text-primary transition-colors">
+                    + Nueva categoría
+                  </button>
                 </div>
-              ))}
-              <button onClick={() => setYesFactor({ ...yesFactor, winners: [...yesFactor.winners, { name: '', category: '', place: '' }] })} className="text-primary text-sm font-medium hover:underline">
-                + Agregar ganador
-              </button>
-            </EditorSection>
-          </div>
+              </Modal>
+            );
+          })()}
+
+          {/* Modal editar ganador individual */}
+          {activeModal?.startsWith('yf-winner-') && (() => {
+            const idx = parseInt(activeModal.replace('yf-winner-', ''));
+            const w = yesFactor.winners[idx];
+            if (!w) return null;
+            return (
+              <Modal title={`Editar ganador — ${w.name || 'Nuevo'}`} onClose={() => setActiveModal('yf-winners')} size="md">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Nombre" value={w.name} onChange={(v) => { const winners = [...yesFactor.winners]; winners[idx] = { ...w, name: v }; setYesFactor({ ...yesFactor, winners }); }} />
+                  <Field label="Categoría" value={w.category} onChange={(v) => { const winners = [...yesFactor.winners]; winners[idx] = { ...w, category: v }; setYesFactor({ ...yesFactor, winners }); }} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Puesto (ej: 1st Place)" value={w.place} onChange={(v) => { const winners = [...yesFactor.winners]; winners[idx] = { ...w, place: v }; setYesFactor({ ...yesFactor, winners }); }} />
+                  <Field label="Año (opcional)" value={w.year || ''} onChange={(v) => { const winners = [...yesFactor.winners]; winners[idx] = { ...w, year: v }; setYesFactor({ ...yesFactor, winners }); }} />
+                </div>
+                <Field label="URL video (opcional)" value={w.videoUrl || ''} onChange={(v) => { const winners = [...yesFactor.winners]; winners[idx] = { ...w, videoUrl: v }; setYesFactor({ ...yesFactor, winners }); }} />
+                <ImageUploader label="Foto del ganador" value={w.image || ''}
+                  onChange={(url) => { const winners = [...yesFactor.winners]; winners[idx] = { ...w, image: url }; setYesFactor({ ...yesFactor, winners }); }}
+                  storagePath="yes-factor-winners" recommendedSize="400 × 400 px (1:1)" />
+                <div className="flex justify-end pt-2">
+                  <button onClick={() => setActiveModal('yf-winners')} className="bg-primary text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-primary-dark transition-colors">← Volver a ganadores</button>
+                </div>
+              </Modal>
+            );
+          })()}
+          </>
         )}
 
-        {/* Blog & Noticias editor */}
+        {/* ── BLOG ── */}
         {activeTab === 'blog' && blogContent && (
-          <div className="space-y-6">
-            <EditorSection title="Metadatos de la página">
-              <Field label="Título de página" value={blogContent.title} onChange={(v) => setBlogContent({ ...blogContent, title: v })} />
-              <Field label="Descripción de página" value={blogContent.description} onChange={(v) => setBlogContent({ ...blogContent, description: v })} textarea />
-            </EditorSection>
+          <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <SectionCard title="Metadatos de la página" icon="📄" desc={blogContent.title} onEdit={() => setActiveModal('blog-content')} />
+          </div>
 
-            <div className="flex justify-between items-center px-2">
-              <h3 className="font-bold text-text uppercase tracking-wider text-sm">
-                Entradas ({blogPosts.length})
-                <span className="ml-2 text-text-light font-normal normal-case tracking-normal">
-                  — {blogPosts.filter(p => p.type === 'noticia').length} noticias · {blogPosts.filter(p => p.type === 'blog').length} blogs
-                </span>
-              </h3>
-              <div className="flex gap-2">
-                <button
-                  onClick={async () => {
-                    if (!db) return;
-                    const newPost: BlogPost = {
-                      id: Date.now().toString(),
-                      slug: `nueva-noticia-${Date.now()}`,
-                      title: 'Nueva Noticia',
-                      excerpt: 'Resumen de la noticia...',
-                      content: '# Nueva Noticia\n\nEscribe aquí el contenido.',
-                      date: new Date().toISOString().split('T')[0],
-                      author: 'Admin YES',
-                      category: 'Institucional',
-                      published: false,
-                      type: 'noticia',
-                    };
-                    await setDoc(doc(db, 'blogPosts', newPost.id), newPost);
-                    setBlogPosts([newPost, ...blogPosts]);
-                  }}
-                  className="text-xs font-bold px-3 py-1.5 rounded-lg border-2 transition-colors"
-                  style={{ borderColor: '#ED1118', color: '#ED1118' }}
-                >
-                  + Noticia
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!db) return;
-                    const newPost: BlogPost = {
-                      id: Date.now().toString(),
-                      slug: `nuevo-articulo-${Date.now()}`,
-                      title: 'Nuevo Artículo',
-                      excerpt: 'Breve resumen del artículo...',
-                      content: '# Contenido del artículo\n\nEscribe aquí usando Markdown.',
-                      date: new Date().toISOString().split('T')[0],
-                      author: 'Admin YES',
-                      category: 'General',
-                      published: false,
-                      type: 'blog',
-                    };
-                    await setDoc(doc(db, 'blogPosts', newPost.id), newPost);
-                    setBlogPosts([newPost, ...blogPosts]);
-                  }}
-                  className="bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary-dark transition-colors"
-                >
-                  + Blog
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {blogPosts.map((post, i) => {
-                const isNoticia = post.type === 'noticia';
-                const isExpired = post.expiresAt ? new Date(post.expiresAt) < new Date() : false;
-                return (
-                  <div key={post.id} className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
-                    {/* Header: tipo + estado */}
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full text-white"
-                        style={{ background: isNoticia ? '#ED1118' : '#323D6E' }}
-                      >
-                        {isNoticia ? 'Noticia' : 'Blog'}
-                      </span>
-                      {post.published && !isExpired && <span className="text-[10px] text-green-600 font-semibold">● Publicado</span>}
-                      {post.published && isExpired && <span className="text-[10px] text-orange-500 font-semibold">● Expirado</span>}
-                      {!post.published && <span className="text-[10px] text-gray-400 font-semibold">● Borrador</span>}
-
-                      {/* Toggle tipo */}
-                      <button
-                        onClick={async () => {
-                          const newType = isNoticia ? 'blog' : 'noticia';
-                          const posts = [...blogPosts]; posts[i] = { ...post, type: newType }; setBlogPosts(posts);
-                          if (db) await updateDoc(doc(db, 'blogPosts', post.id), { type: newType });
-                        }}
-                        className="ml-auto text-[10px] text-text-light hover:text-text underline"
-                      >
-                        Cambiar a {isNoticia ? 'Blog' : 'Noticia'}
-                      </button>
-                      <button onClick={async () => {
-                        if (!db || !confirm('¿Eliminar esta entrada?')) return;
-                        await deleteDoc(doc(db, 'blogPosts', post.id));
-                        setBlogPosts(blogPosts.filter(p => p.id !== post.id));
-                      }} className="text-red-400 hover:text-red-600 text-xs">✕</button>
-                    </div>
-
-                    <Field label="Título" value={post.title} onChange={async (v) => {
-                      const posts = [...blogPosts];
-                      posts[i] = { ...post, title: v, slug: v.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') };
-                      setBlogPosts(posts);
-                      if (db) await updateDoc(doc(db, 'blogPosts', post.id), { title: v, slug: posts[i].slug });
-                    }} />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Field label="Categoría" value={post.category} onChange={async (v) => {
-                        const posts = [...blogPosts]; posts[i] = { ...post, category: v }; setBlogPosts(posts);
-                        if (db) await updateDoc(doc(db, 'blogPosts', post.id), { category: v });
-                      }} />
-                      <Field label="Fecha de publicación" value={post.date} onChange={async (v) => {
-                        const posts = [...blogPosts]; posts[i] = { ...post, date: v }; setBlogPosts(posts);
-                        if (db) await updateDoc(doc(db, 'blogPosts', post.id), { date: v });
-                      }} />
-                    </div>
-
-                    {isNoticia && (
-                      <div>
-                        <label className="block text-xs font-medium text-text-light mb-1">
-                          Fecha de expiración <span className="text-text-light font-normal">(opcional — se deja de mostrar en el hero al vencer)</span>
-                        </label>
-                        <input
-                          type="date"
-                          value={post.expiresAt || ''}
-                          onChange={async (e) => {
-                            const val = e.target.value || undefined;
-                            const posts = [...blogPosts]; posts[i] = { ...post, expiresAt: val }; setBlogPosts(posts);
-                            if (db) await updateDoc(doc(db, 'blogPosts', post.id), { expiresAt: val ?? null });
-                          }}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm"
-                        />
-                        {isExpired && (
-                          <p className="text-xs text-orange-500 mt-1">Esta noticia ha expirado y no se muestra en el sitio.</p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Portada: toggle imagen / video */}
-                    <div>
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-xs font-medium text-text-light">Portada</span>
-                        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
-                          {(['image', 'video'] as const).map((t) => (
-                            <button
-                              key={t}
-                              type="button"
-                              onClick={async () => {
-                                const posts = [...blogPosts]; posts[i] = { ...post, coverType: t }; setBlogPosts(posts);
-                                if (db) await updateDoc(doc(db, 'blogPosts', post.id), { coverType: t });
-                              }}
-                              className={`px-3 py-1 transition-colors ${(post.coverType ?? 'image') === t ? 'bg-primary text-white' : 'text-text-light hover:bg-gray-50'}`}
-                            >
-                              {t === 'image' ? '🖼 Imagen' : '▶ Video'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {(post.coverType ?? 'image') === 'image' ? (
-                        <ImageUploader
-                          label=""
-                          value={post.coverImage || ''}
-                          storagePath="blog-images"
-                          recommendedSize="1280 × 720 px (16:9)"
-                          onChange={async (v) => {
-                            const posts = [...blogPosts]; posts[i] = { ...post, coverImage: v }; setBlogPosts(posts);
-                            if (db) await updateDoc(doc(db, 'blogPosts', post.id), { coverImage: v });
-                          }}
-                        />
-                      ) : (
-                        <div className="space-y-2">
-                          <input
-                            type="url"
-                            value={post.coverVideo || ''}
-                            onChange={async (e) => {
-                              const v = e.target.value;
-                              const posts = [...blogPosts]; posts[i] = { ...post, coverVideo: v }; setBlogPosts(posts);
-                              if (db) await updateDoc(doc(db, 'blogPosts', post.id), { coverVideo: v });
-                            }}
-                            placeholder="https://www.youtube.com/watch?v=... o URL directa de video"
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm"
-                          />
-                          {post.coverVideo && (
-                            <div className="aspect-[16/9] rounded-xl overflow-hidden bg-black">
-                              <iframe
-                                src={post.coverVideo.includes('youtube.com/watch')
-                                  ? `https://www.youtube.com/embed/${new URLSearchParams(post.coverVideo.split('?')[1]).get('v')}`
-                                  : post.coverVideo.includes('youtu.be')
-                                    ? `https://www.youtube.com/embed/${post.coverVideo.split('/').pop()}`
-                                    : post.coverVideo}
-                                className="w-full h-full"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              />
-                            </div>
-                          )}
-                          <p className="text-[10px] text-text-light">Soporta YouTube, Vimeo o URL directa de video (.mp4)</p>
-                        </div>
-                      )}
-                    </div>
-
-                    <Field label="Resumen" value={post.excerpt} onChange={async (v) => {
-                      const posts = [...blogPosts]; posts[i] = { ...post, excerpt: v }; setBlogPosts(posts);
-                      if (db) await updateDoc(doc(db, 'blogPosts', post.id), { excerpt: v });
-                    }} textarea />
-
-                    <RichTextEditor
-                      label="Contenido"
-                      value={post.content}
-                      onChange={async (v) => {
-                        const posts = [...blogPosts]; posts[i] = { ...post, content: v }; setBlogPosts(posts);
-                        if (db) await updateDoc(doc(db, 'blogPosts', post.id), { content: v });
-                      }}
-                    />
-
-                    <div className="flex items-center gap-2 pt-1">
-                      <input
-                        type="checkbox"
-                        id={`pub-${post.id}`}
-                        checked={post.published}
-                        onChange={async (e) => {
-                          const posts = [...blogPosts]; posts[i] = { ...post, published: e.target.checked }; setBlogPosts(posts);
-                          if (db) await updateDoc(doc(db, 'blogPosts', post.id), { published: e.target.checked });
-                        }}
-                      />
-                      <label htmlFor={`pub-${post.id}`} className="text-xs font-medium text-text-light">Publicado</label>
-                    </div>
-                  </div>
-                );
-              })}
+          <div className="flex justify-between items-center mb-3 px-1">
+            <h3 className="font-bold text-text uppercase tracking-wider text-sm">
+              Entradas ({blogPosts.length})
+              <span className="ml-2 text-text-light font-normal normal-case tracking-normal">
+                — {blogPosts.filter(p => p.type === 'noticia').length} noticias · {blogPosts.filter(p => p.type === 'blog').length} blogs
+              </span>
+            </h3>
+            <div className="flex gap-2">
+              <button onClick={async () => {
+                if (!db) return;
+                const newPost: BlogPost = { id: Date.now().toString(), slug: `nueva-noticia-${Date.now()}`, title: 'Nueva Noticia', excerpt: 'Resumen...', content: '', date: new Date().toISOString().split('T')[0], author: 'Admin YES', category: 'Institucional', published: false, type: 'noticia' };
+                await setDoc(doc(db, 'blogPosts', newPost.id), newPost);
+                setBlogPosts([newPost, ...blogPosts]);
+                setActiveModal(`blog-${newPost.id}`);
+              }} className="text-xs font-bold px-3 py-1.5 rounded-lg border-2 transition-colors" style={{ borderColor: '#ED1118', color: '#ED1118' }}>+ Noticia</button>
+              <button onClick={async () => {
+                if (!db) return;
+                const newPost: BlogPost = { id: Date.now().toString(), slug: `nuevo-articulo-${Date.now()}`, title: 'Nuevo Artículo', excerpt: 'Breve resumen...', content: '', date: new Date().toISOString().split('T')[0], author: 'Admin YES', category: 'General', published: false, type: 'blog' };
+                await setDoc(doc(db, 'blogPosts', newPost.id), newPost);
+                setBlogPosts([newPost, ...blogPosts]);
+                setActiveModal(`blog-${newPost.id}`);
+              }} className="bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary-dark transition-colors">+ Blog</button>
             </div>
           </div>
+
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="text-left px-4 py-2.5 text-xs font-bold text-text-light uppercase tracking-wider w-20">Tipo</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-bold text-text-light uppercase tracking-wider">Título</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-bold text-text-light uppercase tracking-wider w-28 hidden md:table-cell">Fecha</th>
+                  <th className="text-center px-4 py-2.5 text-xs font-bold text-text-light uppercase tracking-wider w-24">Estado</th>
+                  <th className="px-4 py-2.5 w-28"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {blogPosts.map((post) => {
+                  const isNoticia = post.type === 'noticia';
+                  const isExpired = post.expiresAt ? new Date(post.expiresAt) < new Date() : false;
+                  return (
+                    <tr key={post.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white"
+                          style={{ background: isNoticia ? '#ED1118' : '#323D6E' }}>
+                          {isNoticia ? 'Noticia' : 'Blog'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-text truncate max-w-xs">{post.title || <span className="text-gray-300 italic">Sin título</span>}</p>
+                        {post.category && <p className="text-xs text-text-light">{post.category}</p>}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-text-light hidden md:table-cell">{post.date}</td>
+                      <td className="px-4 py-3 text-center">
+                        {post.published && !isExpired && <span className="text-[10px] text-green-600 font-bold">● Publicado</span>}
+                        {post.published && isExpired && <span className="text-[10px] text-orange-500 font-bold">● Expirado</span>}
+                        {!post.published && <span className="text-[10px] text-gray-400 font-bold">● Borrador</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 justify-end">
+                          <button onClick={() => setActiveModal(`blog-${post.id}`)}
+                            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-50 text-primary hover:bg-indigo-100 transition-colors">Editar</button>
+                          <button onClick={async () => {
+                            if (!db || !confirm('¿Eliminar esta entrada?')) return;
+                            await deleteDoc(doc(db, 'blogPosts', post.id));
+                            setBlogPosts(blogPosts.filter(p => p.id !== post.id));
+                            if (activeModal === `blog-${post.id}`) closeModal();
+                          }} className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors">✕</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {blogPosts.length === 0 && <p className="text-center text-text-light text-sm py-10">No hay entradas. Crea la primera con los botones de arriba.</p>}
+          </div>
+
+          {/* Modal metadatos blog */}
+          {activeModal === 'blog-content' && (
+            <Modal title="Blog — Metadatos de la página" onClose={closeModal}>
+              <Field label="Título de página" value={blogContent.title} onChange={(v) => setBlogContent({ ...blogContent, title: v })} />
+              <Field label="Descripción de página" value={blogContent.description} onChange={(v) => setBlogContent({ ...blogContent, description: v })} textarea />
+            </Modal>
+          )}
+
+          {/* Modal editar post */}
+          {activeModal?.startsWith('blog-') && activeModal !== 'blog-content' && (() => {
+            const postId = activeModal.replace('blog-', '');
+            const i = blogPosts.findIndex(p => p.id === postId);
+            if (i === -1) return null;
+            const post = blogPosts[i];
+            const isNoticia = post.type === 'noticia';
+            const isExpired = post.expiresAt ? new Date(post.expiresAt) < new Date() : false;
+            return (
+              <Modal title={post.title || 'Editar entrada'} onClose={closeModal} size="xl">
+                <div className="flex items-center gap-4 pb-3 border-b border-gray-100">
+                  <button onClick={async () => {
+                    const newType = isNoticia ? 'blog' : 'noticia';
+                    const posts = [...blogPosts]; posts[i] = { ...post, type: newType }; setBlogPosts(posts);
+                    if (db) await updateDoc(doc(db, 'blogPosts', post.id), { type: newType });
+                  }} className="text-xs text-text-light hover:text-text underline">
+                    Cambiar a {isNoticia ? 'Blog' : 'Noticia'}
+                  </button>
+                  <label className="flex items-center gap-2 ml-auto cursor-pointer">
+                    <input type="checkbox" checked={post.published}
+                      onChange={async (e) => {
+                        const posts = [...blogPosts]; posts[i] = { ...post, published: e.target.checked }; setBlogPosts(posts);
+                        if (db) await updateDoc(doc(db, 'blogPosts', post.id), { published: e.target.checked });
+                      }} className="w-4 h-4 accent-primary" />
+                    <span className="text-xs font-semibold text-text-light">Publicado</span>
+                  </label>
+                </div>
+
+                <Field label="Título" value={post.title} onChange={async (v) => {
+                  const posts = [...blogPosts];
+                  posts[i] = { ...post, title: v, slug: v.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') };
+                  setBlogPosts(posts);
+                  if (db) await updateDoc(doc(db, 'blogPosts', post.id), { title: v, slug: posts[i].slug });
+                }} />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Categoría" value={post.category} onChange={async (v) => {
+                    const posts = [...blogPosts]; posts[i] = { ...post, category: v }; setBlogPosts(posts);
+                    if (db) await updateDoc(doc(db, 'blogPosts', post.id), { category: v });
+                  }} />
+                  <Field label="Fecha de publicación" value={post.date} onChange={async (v) => {
+                    const posts = [...blogPosts]; posts[i] = { ...post, date: v }; setBlogPosts(posts);
+                    if (db) await updateDoc(doc(db, 'blogPosts', post.id), { date: v });
+                  }} />
+                </div>
+
+                {isNoticia && (
+                  <div>
+                    <label className="block text-xs font-medium text-text-light mb-1">Fecha de expiración <span className="font-normal">(opcional)</span></label>
+                    <input type="date" value={post.expiresAt || ''}
+                      onChange={async (e) => {
+                        const val = e.target.value || undefined;
+                        const posts = [...blogPosts]; posts[i] = { ...post, expiresAt: val }; setBlogPosts(posts);
+                        if (db) await updateDoc(doc(db, 'blogPosts', post.id), { expiresAt: val ?? null });
+                      }}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm" />
+                    {isExpired && <p className="text-xs text-orange-500 mt-1">Esta noticia ha expirado.</p>}
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-xs font-medium text-text-light">Portada</span>
+                    <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+                      {(['image', 'video'] as const).map((t) => (
+                        <button key={t} type="button"
+                          onClick={async () => {
+                            const posts = [...blogPosts]; posts[i] = { ...post, coverType: t }; setBlogPosts(posts);
+                            if (db) await updateDoc(doc(db, 'blogPosts', post.id), { coverType: t });
+                          }}
+                          className={`px-3 py-1 transition-colors ${(post.coverType ?? 'image') === t ? 'bg-primary text-white' : 'text-text-light hover:bg-gray-50'}`}>
+                          {t === 'image' ? '🖼 Imagen' : '▶ Video'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {(post.coverType ?? 'image') === 'image' ? (
+                    <ImageUploader label="" value={post.coverImage || ''} storagePath="blog-images" recommendedSize="1280 × 720 px (16:9)"
+                      onChange={async (v) => {
+                        const posts = [...blogPosts]; posts[i] = { ...post, coverImage: v }; setBlogPosts(posts);
+                        if (db) await updateDoc(doc(db, 'blogPosts', post.id), { coverImage: v });
+                      }} />
+                  ) : (
+                    <input type="url" value={post.coverVideo || ''}
+                      onChange={async (e) => {
+                        const v = e.target.value;
+                        const posts = [...blogPosts]; posts[i] = { ...post, coverVideo: v }; setBlogPosts(posts);
+                        if (db) await updateDoc(doc(db, 'blogPosts', post.id), { coverVideo: v });
+                      }}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm" />
+                  )}
+                </div>
+
+                <Field label="Resumen" value={post.excerpt} onChange={async (v) => {
+                  const posts = [...blogPosts]; posts[i] = { ...post, excerpt: v }; setBlogPosts(posts);
+                  if (db) await updateDoc(doc(db, 'blogPosts', post.id), { excerpt: v });
+                }} textarea />
+
+                <RichTextEditor label="Contenido" value={post.content}
+                  onChange={async (v) => {
+                    const posts = [...blogPosts]; posts[i] = { ...post, content: v }; setBlogPosts(posts);
+                    if (db) await updateDoc(doc(db, 'blogPosts', post.id), { content: v });
+                  }} />
+              </Modal>
+            );
+          })()}
+          </>
         )}
 
         {/* Testimonials moderation */}
@@ -878,12 +911,16 @@ const EMPTY_PROGRAM: Omit<Program, 'id' | 'order'> = {
 function ProgramsEditor({
   programs,
   onChange,
+  onEditModal,
+  activeModal,
+  closeModal,
 }: {
   programs: Program[];
   onChange: (p: Program[]) => void;
+  onEditModal: (id: string) => void;
+  activeModal: string | null;
+  closeModal: () => void;
 }) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
   const addProgram = () => {
     const id = `prog-${Date.now()}`;
     const newProg: Program = {
@@ -894,7 +931,7 @@ function ProgramsEditor({
       highlights: [],
     };
     onChange([...programs, newProg]);
-    setExpandedId(id);
+    onEditModal(id);
   };
 
   const updateProgram = (id: string, patch: Partial<Program>) => {
@@ -904,7 +941,7 @@ function ProgramsEditor({
   const deleteProgram = (id: string) => {
     if (!confirm('¿Eliminar este programa?')) return;
     onChange(programs.filter(p => p.id !== id));
-    if (expandedId === id) setExpandedId(null);
+    if (activeModal === `prog-${id}`) closeModal();
   };
 
   const moveProgram = (id: string, dir: -1 | 1) => {
@@ -946,7 +983,6 @@ function ProgramsEditor({
 
       <div className="space-y-3">
         {sorted.map((prog, idx) => {
-          const isOpen = expandedId === prog.id;
           const langColor = { ingles: '#C1121F', frances: '#1A56DB', ambos: '#6B21A8' }[prog.language];
 
           return (
@@ -955,209 +991,29 @@ function ProgramsEditor({
               <div className="flex items-center gap-3 p-3 bg-gray-50">
                 {/* Reorder */}
                 <div className="flex flex-col gap-0.5 shrink-0">
-                  <button
-                    onClick={() => moveProgram(prog.id, -1)}
-                    disabled={idx === 0}
-                    className="text-gray-400 hover:text-gray-600 disabled:opacity-20 text-xs leading-none px-1"
-                  >▲</button>
-                  <button
-                    onClick={() => moveProgram(prog.id, 1)}
-                    disabled={idx === sorted.length - 1}
-                    className="text-gray-400 hover:text-gray-600 disabled:opacity-20 text-xs leading-none px-1"
-                  >▼</button>
+                  <button onClick={() => moveProgram(prog.id, -1)} disabled={idx === 0}
+                    className="text-gray-400 hover:text-gray-600 disabled:opacity-20 text-xs leading-none px-1">▲</button>
+                  <button onClick={() => moveProgram(prog.id, 1)} disabled={idx === sorted.length - 1}
+                    className="text-gray-400 hover:text-gray-600 disabled:opacity-20 text-xs leading-none px-1">▼</button>
                 </div>
 
-                {/* Active toggle */}
-                <input
-                  type="checkbox"
-                  checked={prog.active}
+                <input type="checkbox" checked={prog.active}
                   onChange={e => updateProgram(prog.id, { active: e.target.checked })}
-                  className="w-4 h-4 accent-primary shrink-0"
-                  title="Activo / visible en el sitio"
-                />
+                  className="w-4 h-4 accent-primary shrink-0" title="Activo / visible en el sitio" />
 
-                {/* Language dot */}
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: langColor }} />
 
-                {/* Title */}
-                <button
-                  onClick={() => setExpandedId(isOpen ? null : prog.id)}
-                  className="flex-1 text-left text-sm font-semibold text-text truncate"
-                >
+                <button onClick={() => onEditModal(prog.id)} className="flex-1 text-left text-sm font-semibold text-text truncate">
                   {prog.title || <span className="text-gray-300 italic">Sin título</span>}
                   {prog.subtitle && <span className="text-gray-400 font-normal ml-2 text-xs">— {prog.subtitle}</span>}
                 </button>
 
-                {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => setExpandedId(isOpen ? null : prog.id)}
-                    className="text-xs text-primary font-medium hover:underline"
-                  >
-                    {isOpen ? 'Cerrar' : 'Editar'}
-                  </button>
-                  <button
-                    onClick={() => deleteProgram(prog.id)}
-                    className="text-xs text-red-400 hover:text-red-600 font-medium"
-                  >
-                    Eliminar
-                  </button>
+                  <button onClick={() => onEditModal(prog.id)} className="text-xs text-primary font-medium hover:underline">Editar</button>
+                  <button onClick={() => deleteProgram(prog.id)} className="text-xs text-red-400 hover:text-red-600 font-medium">Eliminar</button>
                 </div>
               </div>
 
-              {/* Edit form */}
-              {isOpen && (
-                <div className="p-4 border-t border-gray-100 space-y-4">
-                  {/* Row 1 */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-text-light mb-1">Título del programa *</label>
-                      <input className={fieldCls} value={prog.title} onChange={e => updateProgram(prog.id, { title: e.target.value })} placeholder="Ej: Niveles Intensivos Inglés" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-text-light mb-1">Audiencia / público</label>
-                      <input className={fieldCls} value={prog.subtitle ?? ''} onChange={e => updateProgram(prog.id, { subtitle: e.target.value })} placeholder="Ej: Jóvenes-Adultos" />
-                    </div>
-                  </div>
-
-                  {/* Row 2 */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-text-light mb-1">Idioma</label>
-                      <select
-                        className={fieldCls}
-                        value={prog.language}
-                        onChange={e => updateProgram(prog.id, { language: e.target.value as Program['language'] })}
-                      >
-                        <option value="ingles">Inglés</option>
-                        <option value="frances">Francés</option>
-                        <option value="ambos">Inglés y Francés</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-text-light mb-1">Etiqueta / tipo</label>
-                      <input className={fieldCls} value={prog.tag ?? ''} onChange={e => updateProgram(prog.id, { tag: e.target.value })} placeholder="Ej: Intensivo, Sábados, YES Kids, GEP" />
-                    </div>
-                  </div>
-
-                  {/* Row 3 */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-text-light mb-1">Duración / Niveles</label>
-                      <input className={fieldCls} value={prog.levels ?? ''} onChange={e => updateProgram(prog.id, { levels: e.target.value })} placeholder="Ej: 6 Niveles (Año y Medio)" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-text-light mb-1">Modalidad</label>
-                      <input className={fieldCls} value={prog.modality ?? ''} onChange={e => updateProgram(prog.id, { modality: e.target.value })} placeholder="Ej: Virtual y/o Presencial" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-text-light mb-1">Intensidad</label>
-                      <input className={fieldCls} value={prog.intensity ?? ''} onChange={e => updateProgram(prog.id, { intensity: e.target.value })} placeholder="Ej: 110 horas por nivel" />
-                    </div>
-                  </div>
-
-                  {/* Schedules */}
-                  <div>
-                    <label className="block text-xs font-medium text-text-light mb-2">Horarios</label>
-                    <div className="space-y-2">
-                      {(prog.schedules ?? []).map((s, si) => (
-                        <div key={si} className="flex gap-2">
-                          <input
-                            className={`${fieldCls} flex-1`}
-                            value={s}
-                            onChange={e => {
-                              const arr = [...(prog.schedules ?? [])];
-                              arr[si] = e.target.value;
-                              updateProgram(prog.id, { schedules: arr });
-                            }}
-                            placeholder="Ej: SAB AM: 8:00 a 12:00 M"
-                          />
-                          <button
-                            onClick={() => updateProgram(prog.id, { schedules: (prog.schedules ?? []).filter((_, i) => i !== si) })}
-                            className="text-red-400 hover:text-red-600 text-sm px-2"
-                          >×</button>
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => updateProgram(prog.id, { schedules: [...(prog.schedules ?? []), ''] })}
-                        className="text-xs text-primary font-semibold hover:underline"
-                      >
-                        + Agregar horario
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Highlights */}
-                  <div>
-                    <label className="block text-xs font-medium text-text-light mb-1">Puntos destacados <span className="text-gray-300">(para programas especiales como GEP)</span></label>
-                    <div className="space-y-2">
-                      {(prog.highlights ?? []).map((h, hi) => (
-                        <div key={hi} className="flex gap-2">
-                          <input
-                            className={`${fieldCls} flex-1`}
-                            value={h}
-                            onChange={e => {
-                              const arr = [...(prog.highlights ?? [])];
-                              arr[hi] = e.target.value;
-                              updateProgram(prog.id, { highlights: arr });
-                            }}
-                            placeholder="Ej: 100% alineación con el MCERL"
-                          />
-                          <button
-                            onClick={() => updateProgram(prog.id, { highlights: (prog.highlights ?? []).filter((_, i) => i !== hi) })}
-                            className="text-red-400 hover:text-red-600 text-sm px-2"
-                          >×</button>
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => updateProgram(prog.id, { highlights: [...(prog.highlights ?? []), ''] })}
-                        className="text-xs text-primary font-semibold hover:underline"
-                      >
-                        + Agregar punto
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Notes */}
-                  <div>
-                    <label className="block text-xs font-medium text-text-light mb-1">Nota adicional (visible)</label>
-                    <input className={fieldCls} value={prog.notes ?? ''} onChange={e => updateProgram(prog.id, { notes: e.target.value })} placeholder="Ej: Cupos limitados" />
-                  </div>
-
-                  {/* Price & materials */}
-                  <div className="border-t border-dashed border-gray-200 pt-3 space-y-3">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Inversión y material</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-text-light">Inversión / Precio</label>
-                        <input className={fieldCls} value={prog.price ?? ''} onChange={e => updateProgram(prog.id, { price: e.target.value })} placeholder="Ej: $755.000 Presencial / $650.000 Virtual" />
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={prog.showPrice ?? false}
-                            onChange={e => updateProgram(prog.id, { showPrice: e.target.checked })}
-                            className="w-4 h-4 accent-primary"
-                          />
-                          <span className="text-xs text-text-light">Mostrar precio en el sitio</span>
-                        </label>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-text-light">Material</label>
-                        <input className={fieldCls} value={prog.materials ?? ''} onChange={e => updateProgram(prog.id, { materials: e.target.value })} placeholder="Ej: $160.000 / Incluido" />
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={prog.showMaterials ?? false}
-                            onChange={e => updateProgram(prog.id, { showMaterials: e.target.checked })}
-                            className="w-4 h-4 accent-primary"
-                          />
-                          <span className="text-xs text-text-light">Mostrar material en el sitio</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           );
         })}
@@ -1168,6 +1024,124 @@ function ProgramsEditor({
           Recuerda guardar los cambios con el botón al final de la página.
         </p>
       )}
+
+      {/* Modal de edición de programa */}
+      {activeModal?.startsWith('prog-') && (() => {
+        const progId = activeModal.replace('prog-', '');
+        const prog = programs.find(p => p.id === progId);
+        if (!prog) return null;
+        return (
+          <Modal title={prog.title || 'Nuevo programa'} onClose={closeModal} size="xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-text-light mb-1">Título del programa *</label>
+                <input className={fieldCls} value={prog.title} onChange={e => updateProgram(prog.id, { title: e.target.value })} placeholder="Ej: Niveles Intensivos Inglés" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text-light mb-1">Audiencia / público</label>
+                <input className={fieldCls} value={prog.subtitle ?? ''} onChange={e => updateProgram(prog.id, { subtitle: e.target.value })} placeholder="Ej: Jóvenes-Adultos" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-text-light mb-1">Idioma</label>
+                <select className={fieldCls} value={prog.language} onChange={e => updateProgram(prog.id, { language: e.target.value as Program['language'] })}>
+                  <option value="ingles">Inglés</option>
+                  <option value="frances">Francés</option>
+                  <option value="ambos">Inglés y Francés</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text-light mb-1">Etiqueta / tipo</label>
+                <input className={fieldCls} value={prog.tag ?? ''} onChange={e => updateProgram(prog.id, { tag: e.target.value })} placeholder="Ej: Intensivo, Sábados, YES Kids, GEP" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-text-light mb-1">Duración / Niveles</label>
+                <input className={fieldCls} value={prog.levels ?? ''} onChange={e => updateProgram(prog.id, { levels: e.target.value })} placeholder="Ej: 6 Niveles (Año y Medio)" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text-light mb-1">Modalidad</label>
+                <input className={fieldCls} value={prog.modality ?? ''} onChange={e => updateProgram(prog.id, { modality: e.target.value })} placeholder="Ej: Virtual y/o Presencial" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text-light mb-1">Intensidad</label>
+                <input className={fieldCls} value={prog.intensity ?? ''} onChange={e => updateProgram(prog.id, { intensity: e.target.value })} placeholder="Ej: 110 horas por nivel" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-light mb-2">Horarios</label>
+              <div className="space-y-2">
+                {(prog.schedules ?? []).map((s, si) => (
+                  <div key={si} className="flex gap-2">
+                    <input className={`${fieldCls} flex-1`} value={s}
+                      onChange={e => { const arr = [...(prog.schedules ?? [])]; arr[si] = e.target.value; updateProgram(prog.id, { schedules: arr }); }}
+                      placeholder="Ej: SAB AM: 8:00 a 12:00 M" />
+                    <button onClick={() => updateProgram(prog.id, { schedules: (prog.schedules ?? []).filter((_, i) => i !== si) })}
+                      className="text-red-400 hover:text-red-600 text-sm px-2">×</button>
+                  </div>
+                ))}
+                <button onClick={() => updateProgram(prog.id, { schedules: [...(prog.schedules ?? []), ''] })}
+                  className="text-xs text-primary font-semibold hover:underline">+ Agregar horario</button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-light mb-1">Puntos destacados <span className="text-gray-300">(GEP, programas especiales)</span></label>
+              <div className="space-y-2">
+                {(prog.highlights ?? []).map((h, hi) => (
+                  <div key={hi} className="flex gap-2">
+                    <input className={`${fieldCls} flex-1`} value={h}
+                      onChange={e => { const arr = [...(prog.highlights ?? [])]; arr[hi] = e.target.value; updateProgram(prog.id, { highlights: arr }); }}
+                      placeholder="Ej: 100% alineación con el MCERL" />
+                    <button onClick={() => updateProgram(prog.id, { highlights: (prog.highlights ?? []).filter((_, i) => i !== hi) })}
+                      className="text-red-400 hover:text-red-600 text-sm px-2">×</button>
+                  </div>
+                ))}
+                <button onClick={() => updateProgram(prog.id, { highlights: [...(prog.highlights ?? []), ''] })}
+                  className="text-xs text-primary font-semibold hover:underline">+ Agregar punto</button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-light mb-1">Nota adicional (visible)</label>
+              <input className={fieldCls} value={prog.notes ?? ''} onChange={e => updateProgram(prog.id, { notes: e.target.value })} placeholder="Ej: Cupos limitados" />
+            </div>
+            <div className="border-t border-dashed border-gray-200 pt-3 space-y-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Inversión y material</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-text-light">Inversión / Precio</label>
+                  <input className={fieldCls} value={prog.price ?? ''} onChange={e => updateProgram(prog.id, { price: e.target.value })} placeholder="Ej: $755.000 Presencial / $650.000 Virtual" />
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={prog.showPrice ?? false} onChange={e => updateProgram(prog.id, { showPrice: e.target.checked })} className="w-4 h-4 accent-primary" />
+                    <span className="text-xs text-text-light">Mostrar precio en el sitio</span>
+                  </label>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-text-light">Material</label>
+                  <input className={fieldCls} value={prog.materials ?? ''} onChange={e => updateProgram(prog.id, { materials: e.target.value })} placeholder="Ej: $160.000 / Incluido" />
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={prog.showMaterials ?? false} onChange={e => updateProgram(prog.id, { showMaterials: e.target.checked })} className="w-4 h-4 accent-primary" />
+                    <span className="text-xs text-text-light">Mostrar material en el sitio</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 border-t border-gray-100 pt-3">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" checked={prog.active} onChange={e => updateProgram(prog.id, { active: e.target.checked })} className="w-4 h-4 accent-primary" />
+                <span className="text-xs font-semibold text-text-light">Activo / visible en el sitio</span>
+              </label>
+              <div className="flex gap-1 ml-auto">
+                <button onClick={() => moveProgram(prog.id, -1)} disabled={sorted.findIndex(p => p.id === prog.id) === 0}
+                  className="text-xs px-2 py-1 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-30">▲ Subir</button>
+                <button onClick={() => moveProgram(prog.id, 1)} disabled={sorted.findIndex(p => p.id === prog.id) === sorted.length - 1}
+                  className="text-xs px-2 py-1 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-30">▼ Bajar</button>
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
     </div>
   );
 }
@@ -1421,6 +1395,79 @@ function TestimonialsTab({
 }
 
 // ── Helper components ──
+
+function Modal({
+  title,
+  onClose,
+  children,
+  size = 'md',
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+}) {
+  const maxW = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' }[size];
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-12 bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className={`bg-white rounded-2xl shadow-2xl w-full ${maxW} max-h-[85vh] flex flex-col`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+          <h2 className="font-bold text-text text-base truncate pr-4">{title}</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-700 text-2xl font-light leading-none shrink-0"
+          >
+            ×
+          </button>
+        </div>
+        <div className="overflow-y-auto p-6 space-y-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function SectionCard({
+  title,
+  icon,
+  desc,
+  badge,
+  onEdit,
+}: {
+  title: string;
+  icon?: string;
+  desc?: string;
+  badge?: string;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-start justify-between gap-3 hover:shadow-sm transition-shadow">
+      <div className="flex items-start gap-3 min-w-0">
+        {icon && <span className="text-xl shrink-0 mt-0.5">{icon}</span>}
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-text text-sm">{title}</p>
+            {badge && (
+              <span className="text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{badge}</span>
+            )}
+          </div>
+          {desc && <p className="text-xs text-text-light mt-0.5 truncate max-w-xs">{desc}</p>}
+        </div>
+      </div>
+      <button
+        onClick={onEdit}
+        className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-50 text-primary hover:bg-indigo-100 transition-colors"
+      >
+        Editar
+      </button>
+    </div>
+  );
+}
 
 function EditorSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (

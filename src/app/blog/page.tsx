@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { fetchBlogPosts, fetchNoticias, fetchBlogContent } from '@/lib/content';
 import Section from '@/components/ui/Section';
+import PostCover from '@/components/blog/PostCover';
 
 export const revalidate = 300;
 
@@ -52,33 +52,13 @@ export default async function BlogPage() {
               >
                 {(noticia.coverImage || noticia.coverVideo) && (
                   <Link href={`/blog/${noticia.slug}`} className="block aspect-[16/9] relative overflow-hidden">
-                    {noticia.coverType === 'video' && noticia.coverVideo ? (
-                      (() => {
-                        const ytId = noticia.coverVideo.match(
-                          /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/
-                        )?.[1];
-                        const thumb = ytId
-                          ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
-                          : noticia.coverImage ?? null;
-                        return thumb ? (
-                          <>
-                            <Image src={thumb} alt={noticia.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/25">
-                              <span className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                                <svg className="w-5 h-5 ml-0.5" style={{ color: '#ED1118' }} fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                              </span>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-4xl">▶️</div>
-                        );
-                      })()
-                    ) : (
-                      <>
-                        <Image src={noticia.coverImage!} alt={noticia.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                      </>
-                    )}
+                    <PostCover
+                      coverType={noticia.coverType}
+                      coverImage={noticia.coverImage}
+                      coverVideo={noticia.coverVideo}
+                      title={noticia.title}
+                      className="w-full h-full"
+                    />
                   </Link>
                 )}
                 <div className="p-5 flex flex-col flex-1">
@@ -135,39 +115,13 @@ export default async function BlogPage() {
             {blogs.map((post) => (
               <article key={post.id} className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300">
                 <Link href={`/blog/${post.slug}`} className="block aspect-[16/9] relative overflow-hidden">
-                  {post.coverType === 'video' && post.coverVideo ? (
-                    (() => {
-                      const ytId = post.coverVideo.match(
-                        /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/
-                      )?.[1];
-                      const thumb = ytId
-                        ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
-                        : post.coverImage ?? null;
-                      return thumb ? (
-                        <>
-                          <Image src={thumb} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                            <span className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                              <svg className="w-5 h-5 ml-0.5" style={{ color: '#ED1118' }} fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="w-full h-full bg-surface flex items-center justify-center text-4xl">▶️</div>
-                      );
-                    })()
-                  ) : post.coverImage ? (
-                    <Image
-                      src={post.coverImage}
-                      alt={post.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-surface flex items-center justify-center text-primary text-4xl">
-                      📝
-                    </div>
-                  )}
+                  <PostCover
+                    coverType={post.coverType}
+                    coverImage={post.coverImage}
+                    coverVideo={post.coverVideo}
+                    title={post.title}
+                    className="w-full h-full"
+                  />
                   <div className="absolute top-3 left-3">
                     <span className="bg-white text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow">
                       {post.category}

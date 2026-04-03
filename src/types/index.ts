@@ -27,13 +27,6 @@ export interface CoursePreview {
   image?: string;
 }
 
-export interface Testimonial {
-  name: string;
-  role: string;
-  text: string;
-  photo?: string;
-}
-
 // ── Firestore: testimonials/{id} — submitted by users, moderated by admin ──
 export interface TestimonialSubmission {
   id?: string;
@@ -56,7 +49,6 @@ export interface HomeContent {
   trustBar: string[];
   features: Feature[];
   coursesPreview: CoursePreview[];
-  testimonials: Testimonial[];
   faq: FAQItem[];
   yesFactorPreview: {
     title: string;
@@ -81,6 +73,8 @@ export interface YESFactorWinner {
   category: string;
   place: string;
   year?: string;
+  image?: string;    // URL de Firebase Storage
+  videoUrl?: string; // enlace a YouTube u otro video
 }
 
 export interface YESFactorContent {

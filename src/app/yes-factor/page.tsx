@@ -26,15 +26,15 @@ export default async function YESFactorPage() {
   return (
     <div className="pt-20">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-primary to-primary-dark py-16 sm:py-24 px-4 text-center">
+      <div className="bg-gradient-to-br from-primary to-primary-dark py-10 sm:py-14 px-4 text-center">
         <div className="max-w-4xl mx-auto">
-          <span className="bg-secondary text-surface-dark text-xs font-black px-4 py-1.5 rounded-full mb-6 inline-block tracking-widest uppercase">
+          <span className="bg-secondary text-surface-dark text-xs font-black px-4 py-1.5 rounded-full mb-4 inline-block tracking-widest uppercase">
             Evento Anual
           </span>
-          <h1 className="text-4xl sm:text-6xl font-black text-white mb-6">
+          <h1 className="text-3xl sm:text-5xl font-black text-white mb-4">
             {data.title}
           </h1>
-          <p className="text-blue-100 text-lg sm:text-xl max-w-2xl mx-auto mb-10">
+          <p className="text-blue-100 text-base sm:text-lg max-w-2xl mx-auto mb-7">
             {data.description}
           </p>
           {data.registrationStatus === 'open' && (
@@ -94,28 +94,75 @@ export default async function YESFactorPage() {
         </div>
       </Section>
 
-      {/* Winners */}
-      <Section className="bg-surface">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-text mb-4">Wall of Fame</h2>
-          <p className="text-text-light">Recordamos a los talentos que han dejado huella en nuestras últimas ediciones.</p>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {data.winners.map((winner, i) => (
-            <div 
-              key={i} 
-              className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow text-center"
-            >
-              <div className="text-3xl mb-4">🏆</div>
-              <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">{winner.place}</p>
-              <h3 className="text-lg font-bold text-text mb-1">{winner.name}</h3>
-              <p className="text-sm text-text-light">{winner.category}</p>
-              {winner.year && <p className="text-xs text-text-lighter mt-2">{winner.year}</p>}
+      {/* Winners — agrupados por categoría */}
+      {data.winners.length > 0 && (() => {
+        // Derivar categorías únicas manteniendo el orden de aparición
+        const categories = Array.from(new Set(data.winners.map(w => w.category).filter(Boolean)));
+        return (
+          <Section className="bg-surface">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-text mb-4">Wall of Fame</h2>
+              <p className="text-text-light">Recordamos a los talentos que han dejado huella en nuestras últimas ediciones.</p>
             </div>
-          ))}
-        </div>
-      </Section>
+
+            <div className="space-y-14">
+              {categories.map((cat) => {
+                const group = data.winners.filter(w => w.category === cat);
+                return (
+                  <div key={cat}>
+                    {/* Cabecera de categoría */}
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="h-px flex-1 bg-gray-200" />
+                      <span className="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest text-white" style={{ background: '#323D6E' }}>
+                        {cat}
+                      </span>
+                      <div className="h-px flex-1 bg-gray-200" />
+                    </div>
+
+                    {/* Grid de ganadores */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {group.map((winner, i) => (
+                        <div
+                          key={i}
+                          className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow text-center overflow-hidden flex flex-col"
+                        >
+                          {winner.image ? (
+                            <div className="relative aspect-square w-full">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={winner.image} alt={winner.name} className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="aspect-square w-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                              <span className="text-5xl">🏆</span>
+                            </div>
+                          )}
+                          <div className="p-5 flex flex-col flex-1">
+                            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">{winner.place}</p>
+                            <h3 className="text-base font-bold text-text mb-1">{winner.name}</h3>
+                            {winner.year && <p className="text-xs text-text-lighter mt-1">{winner.year}</p>}
+                            {winner.videoUrl && (
+                              <a
+                                href={winner.videoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-4 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                                style={{ background: '#ED1118' }}
+                              >
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                Ver audición
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Section>
+        );
+      })()}
 
       {/* Registration / CTA */}
       <Section className="bg-white">

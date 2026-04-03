@@ -3,72 +3,51 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
+import { feature } from 'topojson-client';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const worldAtlas = require('world-atlas/countries-110m.json');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AURORA SHADER — fondo animado con blobs orgánicos FBM
+// AURORA SHADER — fondo animado con blobs orgánicos FBM (sin cambios)
 // ─────────────────────────────────────────────────────────────────────────────
-const vert = /* glsl */ `
+const auroraVert = /* glsl */ `
   varying vec2 vUv;
   void main() {
     vUv = uv;
     gl_Position = vec4(position, 1.0);
   }
 `;
-
-const frag = /* glsl */ `
+const auroraFrag = /* glsl */ `
   uniform float uTime;
   varying vec2 vUv;
-
-  float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-  }
+  float hash(vec2 p) { return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
   float vnoise(vec2 p) {
-    vec2 i = floor(p); vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i), hash(i+vec2(1,0)), u.x),
-               mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), u.x), u.y);
+    vec2 i=floor(p),f=fract(p),u=f*f*(3.0-2.0*f);
+    return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);
   }
   float fbm(vec2 p) {
-    float v = 0.0, a = 0.5;
-    for (int i = 0; i < 5; i++) { v += a * vnoise(p); p = p*2.1 + vec2(1.7,9.2); a *= 0.5; }
+    float v=0.0,a=0.5;
+    for(int i=0;i<5;i++){v+=a*vnoise(p);p=p*2.1+vec2(1.7,9.2);a*=0.5;}
     return v;
   }
-
   void main() {
-    vec2 uv = vUv;
-    float t = uTime * 0.13;
-
-    // Two-pass domain warp — shapes orgánicas, no circulares
-    vec2 q = vec2(fbm(uv*1.9 + t*0.45), fbm(uv*1.9 + vec2(5.2,1.3) + t*0.35));
-    vec2 r = vec2(fbm(uv*1.6 + q + vec2(1.7,9.2) + t*0.22),
-                  fbm(uv*1.6 + q + vec2(8.3,2.8) + t*0.18));
-    vec2 w = uv + r * 0.26;
-
-    // Blobs
-    float bA  = pow(smoothstep(0.86,0.0, length(w - vec2(0.08+0.07*sin(t*0.50), 0.05+0.06*cos(t*0.40)))), 1.3);
-    float rA  = pow(smoothstep(0.68,0.0, length(w - vec2(0.93+0.05*cos(t*0.55), 0.08+0.07*sin(t*0.68)))), 1.7);
-    float pA  = pow(smoothstep(0.74,0.0, length(w - vec2(0.47+0.11*sin(t*0.28+0.8), 0.40+0.08*cos(t*0.22)))), 1.8);
-    float r2A = pow(smoothstep(0.60,0.0, length(w - vec2(0.04+0.06*cos(t*0.44), 0.82+0.05*sin(t*0.37)))), 2.1);
-    float b2A = pow(smoothstep(0.64,0.0, length(w - vec2(0.90+0.06*sin(t*0.35), 0.85+0.05*cos(t*0.30)))), 2.0);
-
-    float shimmer = fbm(uv * 5.5 + t * 0.5) * 0.04;
-
-    vec3 base = vec3(0.918, 0.935, 0.995);
-    vec3 blue = vec3(0.196, 0.239, 0.431); // #323D6E
-    vec3 red  = vec3(0.929, 0.067, 0.094); // #ED1118
-    vec3 lav  = vec3(0.68,  0.72,  0.97);
-
-    vec3 col = base + shimmer;
-    col = mix(col, blue, bA  * 0.48);
-    col = mix(col, red,  rA  * 0.32);
-    col = mix(col, lav,  pA  * 0.36);
-    col = mix(col, red,  r2A * 0.22);
-    col = mix(col, blue, b2A * 0.26);
-
-    float vign = 1.0 - smoothstep(0.40, 1.10, length(uv - 0.5) * 1.6);
-    col = mix(base + shimmer*0.4, col, vign * 0.93 + 0.07);
-
-    gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+    vec2 uv=vUv; float t=uTime*0.13;
+    vec2 q=vec2(fbm(uv*1.9+t*0.45),fbm(uv*1.9+vec2(5.2,1.3)+t*0.35));
+    vec2 r=vec2(fbm(uv*1.6+q+vec2(1.7,9.2)+t*0.22),fbm(uv*1.6+q+vec2(8.3,2.8)+t*0.18));
+    vec2 w=uv+r*0.26;
+    float bA=pow(smoothstep(0.86,0.0,length(w-vec2(0.08+0.07*sin(t*0.50),0.05+0.06*cos(t*0.40)))),1.3);
+    float rA=pow(smoothstep(0.68,0.0,length(w-vec2(0.93+0.05*cos(t*0.55),0.08+0.07*sin(t*0.68)))),1.7);
+    float pA=pow(smoothstep(0.74,0.0,length(w-vec2(0.47+0.11*sin(t*0.28+0.8),0.40+0.08*cos(t*0.22)))),1.8);
+    float r2A=pow(smoothstep(0.60,0.0,length(w-vec2(0.04+0.06*cos(t*0.44),0.82+0.05*sin(t*0.37)))),2.1);
+    float b2A=pow(smoothstep(0.64,0.0,length(w-vec2(0.90+0.06*sin(t*0.35),0.85+0.05*cos(t*0.30)))),2.0);
+    float shimmer=fbm(uv*5.5+t*0.5)*0.04;
+    vec3 base=vec3(0.918,0.935,0.995),blue=vec3(0.196,0.239,0.431),red=vec3(0.929,0.067,0.094),lav=vec3(0.68,0.72,0.97);
+    vec3 col=base+shimmer;
+    col=mix(col,blue,bA*0.48); col=mix(col,red,rA*0.32);
+    col=mix(col,lav,pA*0.36);  col=mix(col,red,r2A*0.22); col=mix(col,blue,b2A*0.26);
+    float vign=1.0-smoothstep(0.40,1.10,length(uv-0.5)*1.6);
+    col=mix(base+shimmer*0.4,col,vign*0.93+0.07);
+    gl_FragColor=vec4(clamp(col,0.0,1.0),1.0);
   }
 `;
 
@@ -80,184 +59,336 @@ function AuroraPlane() {
   return (
     <mesh renderOrder={0}>
       <planeGeometry args={[2, 2]} />
-      <shaderMaterial
-        ref={matRef}
-        vertexShader={vert}
-        fragmentShader={frag}
-        uniforms={{ uTime: { value: 0 } }}
-        depthTest={false}
-      />
+      <shaderMaterial ref={matRef} vertexShader={auroraVert} fragmentShader={auroraFrag}
+        uniforms={{ uTime: { value: 0 } }} depthTest={false} />
     </mesh>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RED NEURONAL — nodos (Points) + conexiones dinámicas (LineSegments)
-// Cada frame: se calculan pares de nodos dentro del umbral de distancia y se
-// dibujan líneas cuyo color se desvanece hacia el fondo según la distancia
-// (cerca = color de marca saturado, lejos = casi invisible).
+// SHADER — Atmósfera (halo sutil solo en el borde, FrontSide)
 // ─────────────────────────────────────────────────────────────────────────────
-const COUNT    = 90;                        // nodos — 90 da densidad visual limpia
-const MAX_SEGS = COUNT * (COUNT - 1) / 2;  // cota superior de segmentos posibles
-
-// Datos estáticos aleatorios fuera del componente (react-hooks/purity)
-const RAND_POS   = Float32Array.from({ length: COUNT * 3 }, () => Math.random());
-const RAND_IS_BLUE = Array.from({ length: COUNT }, () => Math.random() > 0.42);
-const RAND_VX    = Float32Array.from({ length: COUNT }, () => Math.random());
-const RAND_VY    = Float32Array.from({ length: COUNT }, () => Math.random());
-const RAND_PHASE = Float32Array.from({ length: COUNT }, () => Math.random());
-
-// Colores de nodo por índice (calculados una sola vez)
-const NODE_COLORS = (() => {
-  const c = new Float32Array(COUNT * 3);
-  for (let i = 0; i < COUNT; i++) {
-    c[i*3]   = RAND_IS_BLUE[i] ? 0.196 : 0.929;
-    c[i*3+1] = RAND_IS_BLUE[i] ? 0.239 : 0.067;
-    c[i*3+2] = RAND_IS_BLUE[i] ? 0.431 : 0.094;
+const atmVert = /* glsl */ `
+  varying vec3 vNormal;
+  varying vec3 vViewPos;
+  void main() {
+    vNormal  = normalize(normalMatrix * normal);
+    vViewPos = (modelViewMatrix * vec4(position, 1.0)).xyz;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
-  return c;
-})();
+`;
+const atmFrag = /* glsl */ `
+  varying vec3 vNormal;
+  varying vec3 vViewPos;
+  void main() {
+    vec3  viewDir = normalize(-vViewPos);
+    float rim     = 1.0 - max(dot(vNormal, viewDir), 0.0);
+    // Solo el borde extremo — pow alto = halo fino
+    rim = pow(rim, 4.5);
+    gl_FragColor  = vec4(0.38, 0.65, 1.0, rim * 0.50);
+  }
+`;
 
-// Color de fondo del hero (para interpolar líneas hacia invisible)
-const BG_R = 0.918, BG_G = 0.935, BG_B = 0.995;
+// ─────────────────────────────────────────────────────────────────────────────
+// SHADER — Puntos de países con halo pulsante
+// ─────────────────────────────────────────────────────────────────────────────
+const dotVert = /* glsl */ `
+  attribute vec3 color;
+  varying vec3 vColor;
+  void main() {
+    vColor = color;
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize = 0.42 * (280.0 / -mv.z);
+    gl_Position  = projectionMatrix * mv;
+  }
+`;
+const dotFrag = /* glsl */ `
+  varying vec3 vColor;
+  uniform float uTime;
+  void main() {
+    vec2  uv   = gl_PointCoord - 0.5;
+    float d    = length(uv);
+    // Núcleo sólido
+    float core = 1.0 - smoothstep(0.15, 0.20, d);
+    // Halo pulsante con offset por color (rojo y azul pulsan desfasados)
+    float beat = sin(uTime * 2.2 + vColor.b * 3.14) * 0.5 + 0.5;
+    float halo = (1.0 - smoothstep(0.22, 0.50, d)) * 0.30 * beat;
+    float alpha = core + halo;
+    if (alpha < 0.01) discard;
+    vec3  bright = vColor + vec3(0.3) * core;
+    gl_FragColor = vec4(clamp(bright, 0.0, 1.0), alpha);
+  }
+`;
 
-function NeuralNet() {
+// ─────────────────────────────────────────────────────────────────────────────
+// SHADER — Anillo de llegada (ripple al destino del arco)
+// aArrivalPhase: 0 = sin efecto, 1 = llegada completa/fade out
+// ─────────────────────────────────────────────────────────────────────────────
+const ringVert = /* glsl */ `
+  attribute float aArrivalPhase;
+  varying  float vPhase;
+  void main() {
+    vPhase = aArrivalPhase;
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    // El punto crece a medida que el anillo se expande
+    gl_PointSize = (0.46 + vPhase * 2.3) * (280.0 / -mv.z);
+    gl_Position  = projectionMatrix * mv;
+  }
+`;
+const ringFrag = /* glsl */ `
+  varying float vPhase;
+  void main() {
+    if (vPhase < 0.01) discard;
+    vec2  uv    = gl_PointCoord - 0.5;
+    float d     = length(uv);
+    // Anillo que se expande hacia afuera
+    float ringR = 0.06 + vPhase * 0.40;
+    float ring  = 1.0 - smoothstep(0.0, 0.04, abs(d - ringR));
+    float alpha = ring * pow(1.0 - vPhase, 1.8) * 0.90;
+    if (alpha < 0.01) discard;
+    gl_FragColor = vec4(0.80, 0.92, 1.0, alpha);
+  }
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GLOBO CON MAPAMUNDI REAL
+// ─────────────────────────────────────────────────────────────────────────────
+const GLOBE_R  = 1.8;
+const ARC_LIFT = 0.52;
+const ARC_PTS  = 64;
+const CYCLE_S  = 6.0;
+const TAIL_PTS = Math.floor(ARC_PTS * 0.55);
+
+function toVec3(lat: number, lng: number, r = GLOBE_R): THREE.Vector3 {
+  const phi   = (90 - lat) * (Math.PI / 180);
+  const theta = (lng + 180) * (Math.PI / 180);
+  return new THREE.Vector3(
+    -r * Math.sin(phi) * Math.cos(theta),
+     r * Math.cos(phi),
+     r * Math.sin(phi) * Math.sin(theta),
+  );
+}
+
+// IDs numéricos ISO 3166-1 de los países destacados (world-atlas usa estos IDs)
+const EN_IDS = new Set([840, 826, 36, 124, 566, 710, 372, 554]); // USA, UK, AU, CA, NG, ZA, IE, NZ
+const FR_IDS = new Set([250, 56, 504, 686, 180, 756, 384, 450]);  // FR, BE, MA, SN, CD, CH, CI, MG
+
+// Países de habla inglesa (puntos y arcos)
+const EN_COUNTRIES = [
+  { lat: 38,   lng: -97   }, // EE.UU.
+  { lat: 51.5, lng: -0.1  }, // Reino Unido
+  { lat: -25,  lng: 133   }, // Australia
+  { lat: 56,   lng: -96   }, // Canadá
+  { lat:  9,   lng:  8    }, // Nigeria
+  { lat: -30,  lng: 25    }, // Sudáfrica
+  { lat: 53,   lng: -8    }, // Irlanda
+  { lat: -41,  lng: 174   }, // Nueva Zelanda
+];
+
+// Países de habla francesa (puntos y arcos)
+const FR_COUNTRIES = [
+  { lat: 46,   lng:  2    }, // Francia
+  { lat: 50.5, lng:  4.5  }, // Bélgica
+  { lat: 32,   lng: -5    }, // Marruecos
+  { lat: 14,   lng: -14   }, // Senegal
+  { lat: -4,   lng: 24    }, // R.D. Congo
+  { lat: 47,   lng:  8    }, // Suiza
+  { lat:  7,   lng: -6    }, // Costa de Marfil
+  { lat: -20,  lng: 47    }, // Madagascar
+];
+
+const PAIRS: [number, number][] = [
+  [0, 0], [1, 2], [2, 5], [3, 1],
+  [4, 6], [5, 4], [6, 3], [7, 7],
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENTE GLOBO
+// ─────────────────────────────────────────────────────────────────────────────
+function GlobeScene() {
+  const groupRef  = useRef<THREE.Group>(null);
+  const dotMatRef = useRef<THREE.ShaderMaterial>(null);
+  const ringMatRef = useRef<THREE.ShaderMaterial>(null);
   const { viewport } = useThree();
 
-  // ── Geometría de nodos (posiciones actualizadas en useFrame) ──────────────
-  const { nodeGeo, vx, vy, phase } = useMemo(() => {
-    const hw = viewport.width  * 0.52;
-    const hh = viewport.height * 0.52;
+  const globeScale = Math.max(0.77, Math.min(1.31, viewport.aspect * 0.79));
+  const xOffset    = viewport.aspect > 1
+    ? Math.max(-0.8, -(viewport.aspect * 0.22))  // desktop: centrado, apenas hacia la izquierda
+    : 0;                                           // mobile: centrado
 
-    const positions = new Float32Array(COUNT * 3);
-    const vx    = new Float32Array(COUNT);
-    const vy    = new Float32Array(COUNT);
-    const phase = new Float32Array(COUNT);
+  const { borderGeo, enBorderGeo, frBorderGeo, dotsGeo, arcLines, ringGeo } = useMemo(() => {
+    // ── Fronteras 3D — base + resaltadas por grupo ──────────────────────────
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const countries = feature(worldAtlas, worldAtlas.objects.countries) as any;
+    const borderPts: number[] = [];
+    const enPts: number[]     = [];
+    const frPts: number[]     = [];
 
-    for (let i = 0; i < COUNT; i++) {
-      positions[i*3]   = (RAND_POS[i*3]   - 0.5) * hw * 2;
-      positions[i*3+1] = (RAND_POS[i*3+1] - 0.5) * hh * 2;
-      positions[i*3+2] =  RAND_POS[i*3+2] * 0.1;
+    const collectRing = (ring: number[][], dst: number[]) => {
+      for (let i = 0; i < ring.length - 1; i++) {
+        const a = toVec3(ring[i][1],   ring[i][0]);
+        const b = toVec3(ring[i+1][1], ring[i+1][0]);
+        dst.push(a.x, a.y, a.z, b.x, b.y, b.z);
+      }
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    countries.features.forEach((feat: any) => {
+      const g  = feat.geometry;
+      const id = Number(feat.id);
+      if (!g) return;
+      const isEN = EN_IDS.has(id);
+      const isFR = FR_IDS.has(id);
+      const rings: number[][][] = g.type === 'Polygon'
+        ? g.coordinates
+        : g.type === 'MultiPolygon'
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ? g.coordinates.flatMap((p: any) => p)
+          : [];
+      rings.forEach((ring: number[][]) => {
+        collectRing(ring, borderPts);
+        if (isEN) collectRing(ring, enPts);
+        if (isFR) collectRing(ring, frPts);
+      });
+    });
 
-      vx[i]    = (RAND_VX[i]  - 0.5) * 0.00045;
-      vy[i]    =  RAND_VY[i]  * 0.00025 + 0.00006;
-      phase[i] =  RAND_PHASE[i] * Math.PI * 2;
-    }
+    const mkGeo = (pts: number[]) => {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3));
+      return g;
+    };
+    const borderGeo   = mkGeo(borderPts);
+    const enBorderGeo = mkGeo(enPts);
+    const frBorderGeo = mkGeo(frPts);
 
-    const nodeGeo = new THREE.BufferGeometry();
-    nodeGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    nodeGeo.setAttribute('color',    new THREE.BufferAttribute(NODE_COLORS.slice(), 3));
-    return { nodeGeo, vx, vy, phase };
-  }, [viewport.width, viewport.height]);
+    // ── Puntos de países (shader personalizado con glow) ─────────────────────
+    const dotPts: number[] = [], dotCols: number[] = [];
+    EN_COUNTRIES.forEach(({ lat, lng }) => {
+      const p = toVec3(lat, lng, GLOBE_R + 0.04);
+      dotPts.push(p.x, p.y, p.z);
+      dotCols.push(0.929, 0.067, 0.094); // rojo marca
+    });
+    FR_COUNTRIES.forEach(({ lat, lng }) => {
+      const p = toVec3(lat, lng, GLOBE_R + 0.04);
+      dotPts.push(p.x, p.y, p.z);
+      dotCols.push(0.216, 0.435, 0.831); // azul vivo
+    });
+    const dotsGeo = new THREE.BufferGeometry();
+    dotsGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(dotPts), 3));
+    dotsGeo.setAttribute('color',    new THREE.BufferAttribute(new Float32Array(dotCols), 3));
 
-  // ── Geometría de líneas (pre-alocada al máximo, drawRange controla cuántas) ─
-  const lineGeo = useMemo(() => {
-    const geo = new THREE.BufferGeometry();
-    // 2 vértices por segmento × 3 componentes
-    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_SEGS * 6), 3));
-    geo.setAttribute('color',    new THREE.BufferAttribute(new Float32Array(MAX_SEGS * 6), 3));
-    geo.setDrawRange(0, 0); // empieza vacío
-    return geo;
+    // ── Arcos animados (curvas Bézier) ───────────────────────────────────────
+    const arcLines = PAIRS.map(([ei, fi]) => {
+      const from = toVec3(EN_COUNTRIES[ei].lat, EN_COUNTRIES[ei].lng);
+      const to   = toVec3(FR_COUNTRIES[fi].lat, FR_COUNTRIES[fi].lng);
+      const mid  = from.clone().add(to).normalize().multiplyScalar(GLOBE_R + ARC_LIFT);
+      const pts  = new THREE.QuadraticBezierCurve3(from, mid, to).getPoints(ARC_PTS);
+      const geo  = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(
+        new Float32Array(pts.flatMap(p => [p.x, p.y, p.z])), 3,
+      ));
+      geo.setDrawRange(0, 0);
+      const mat  = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.92, depthTest: false });
+      const line = new THREE.Line(geo, mat);
+      line.renderOrder = 4;
+      return line;
+    });
+
+    // ── Posiciones de llegada: destino de cada arco (FR country en orden de PAIRS)
+    const ringPts = PAIRS.flatMap(([, fi]) => {
+      const p = toVec3(FR_COUNTRIES[fi].lat, FR_COUNTRIES[fi].lng, GLOBE_R + 0.05);
+      return [p.x, p.y, p.z];
+    });
+    const ringGeo = new THREE.BufferGeometry();
+    ringGeo.setAttribute('position',      new THREE.BufferAttribute(new Float32Array(ringPts), 3));
+    ringGeo.setAttribute('aArrivalPhase', new THREE.BufferAttribute(new Float32Array(PAIRS.length), 1));
+
+    return { borderGeo, enBorderGeo, frBorderGeo, dotsGeo, arcLines, ringGeo };
   }, []);
 
   useFrame(({ clock }) => {
-    const nodePosAttr  = nodeGeo.getAttribute('position') as THREE.BufferAttribute;
-    const linePosAttr  = lineGeo.getAttribute('position') as THREE.BufferAttribute;
-    const lineColAttr  = lineGeo.getAttribute('color')    as THREE.BufferAttribute;
-    if (!nodePosAttr || !linePosAttr || !lineColAttr) return;
+    const t = clock.getElapsedTime();
+    if (groupRef.current) groupRef.current.rotation.y = t * 0.07;
+    if (dotMatRef.current) dotMatRef.current.uniforms.uTime.value = t;
 
-    const pos     = nodePosAttr.array as Float32Array;
-    const linePos = linePosAttr.array as Float32Array;
-    const lineCol = lineColAttr.array as Float32Array;
-    const t       = clock.getElapsedTime();
-    const hw      = viewport.width  * 0.55;
-    const hh      = viewport.height * 0.55;
+    const arrivalAttr = ringGeo.getAttribute('aArrivalPhase') as THREE.BufferAttribute;
+    const arrivalArr  = arrivalAttr.array as Float32Array;
 
-    // Umbral de conexión: ~18 % del ancho del viewport
-    const THRESH  = viewport.width * 0.18;
-    const THRESH2 = THRESH * THRESH; // evitar sqrt en el inner loop
+    arcLines.forEach((line, i) => {
+      const phase = ((t / CYCLE_S) + i / arcLines.length) % 1;
+      const head  = Math.floor(phase * ARC_PTS);
+      const tail  = Math.max(0, head - TAIL_PTS);
+      line.geometry.setDrawRange(tail, head - tail);
 
-    // ── 1. Mover nodos ──────────────────────────────────────────────────────
-    for (let i = 0; i < COUNT; i++) {
-      pos[i*3]     += vx[i] + Math.sin(t * 0.26 + phase[i]) * 0.00014;
-      pos[i*3 + 1] += vy[i];
-      if (pos[i*3+1] >  hh) pos[i*3+1] -= hh * 2;
-      if (pos[i*3]   >  hw) pos[i*3]   -= hw * 2;
-      if (pos[i*3]   < -hw) pos[i*3]   += hw * 2;
-    }
-    nodePosAttr.needsUpdate = true;
-
-    // ── 2. Recalcular conexiones ─────────────────────────────────────────────
-    let seg = 0; // índice de segmento activo
-
-    for (let i = 0; i < COUNT && seg < MAX_SEGS; i++) {
-      const xi = pos[i*3], yi = pos[i*3+1], zi = pos[i*3+2];
-
-      for (let j = i + 1; j < COUNT && seg < MAX_SEGS; j++) {
-        const dx = xi - pos[j*3];
-        const dy = yi - pos[j*3+1];
-        const d2 = dx*dx + dy*dy;
-
-        if (d2 < THRESH2) {
-          // Fuerza de conexión: 1 = tocándose, 0 = en el umbral
-          const strength = 1 - Math.sqrt(d2) / THRESH;
-
-          // Color interpolado entre el fondo (invisible) y el color del nodo i
-          const ni = i * 3;
-          const base6 = seg * 6;
-
-          // Vértice A (nodo i)
-          linePos[base6]   = xi;
-          linePos[base6+1] = yi;
-          linePos[base6+2] = zi;
-          lineCol[base6]   = BG_R + (NODE_COLORS[ni]   - BG_R) * strength;
-          lineCol[base6+1] = BG_G + (NODE_COLORS[ni+1] - BG_G) * strength;
-          lineCol[base6+2] = BG_B + (NODE_COLORS[ni+2] - BG_B) * strength;
-
-          // Vértice B (nodo j)
-          const nj = j * 3;
-          linePos[base6+3] = pos[j*3];
-          linePos[base6+4] = pos[j*3+1];
-          linePos[base6+5] = pos[j*3+2];
-          lineCol[base6+3] = BG_R + (NODE_COLORS[nj]   - BG_R) * strength;
-          lineCol[base6+4] = BG_G + (NODE_COLORS[nj+1] - BG_G) * strength;
-          lineCol[base6+5] = BG_B + (NODE_COLORS[nj+2] - BG_B) * strength;
-
-          seg++;
-        }
-      }
-    }
-
-    lineGeo.setDrawRange(0, seg * 2); // 2 vértices por segmento
-    linePosAttr.needsUpdate = true;
-    lineColAttr.needsUpdate = true;
+      // Fase de llegada: sube de 0→1 en el último 25% del ciclo, luego cae a 0
+      arrivalArr[i] = Math.max(0, (phase - 0.75) / 0.25);
+    });
+    arrivalAttr.needsUpdate = true;
   });
 
   return (
-    <>
-      {/* Nodos */}
-      <points geometry={nodeGeo} renderOrder={2}>
-        <pointsMaterial
-          vertexColors
+    <group ref={groupRef} position={[xOffset, 0, 0]} scale={globeScale}>
+
+      {/* Océano — tinte muy suave para dar profundidad sin tapar la aurora */}
+      <mesh renderOrder={1}>
+        <sphereGeometry args={[GLOBE_R, 48, 32]} />
+        <meshBasicMaterial color="#1A3A6A" transparent opacity={0.18} depthTest={false} />
+      </mesh>
+
+      {/* Atmósfera — halo fino en el borde, FrontSide */}
+      <mesh renderOrder={2}>
+        <sphereGeometry args={[GLOBE_R + 0.08, 40, 20]} />
+        <shaderMaterial
+          vertexShader={atmVert}
+          fragmentShader={atmFrag}
           transparent
-          opacity={0.80}
-          size={3.5}
-          sizeAttenuation={false}
+          depthTest={false}
+          side={THREE.FrontSide}
+        />
+      </mesh>
+
+      {/* Fronteras base — todos los países */}
+      <lineSegments geometry={borderGeo} renderOrder={3}>
+        <lineBasicMaterial color="#5A90D0" transparent opacity={0.55} depthTest={false} />
+      </lineSegments>
+
+      {/* Fronteras resaltadas — países de habla inglesa (rojo marca) */}
+      <lineSegments geometry={enBorderGeo} renderOrder={4}>
+        <lineBasicMaterial color="#ED1118" transparent opacity={0.95} depthTest={false} />
+      </lineSegments>
+
+      {/* Fronteras resaltadas — países de habla francesa (azul marca) */}
+      <lineSegments geometry={frBorderGeo} renderOrder={4}>
+        <lineBasicMaterial color="#4A6FD8" transparent opacity={0.95} depthTest={false} />
+      </lineSegments>
+
+      {/* Puntos de países con glow pulsante */}
+      <points geometry={dotsGeo} renderOrder={5}>
+        <shaderMaterial
+          ref={dotMatRef}
+          vertexShader={dotVert}
+          fragmentShader={dotFrag}
+          uniforms={{ uTime: { value: 0 } }}
+          transparent
           depthTest={false}
         />
       </points>
 
-      {/* Conexiones */}
-      <lineSegments geometry={lineGeo} renderOrder={1}>
-        <lineBasicMaterial
-          vertexColors
+      {/* Arcos animados */}
+      {arcLines.map((line, i) => (
+        <primitive key={i} object={line} />
+      ))}
+
+      {/* Anillos de llegada — ripple al destino de cada arco */}
+      <points geometry={ringGeo} renderOrder={6}>
+        <shaderMaterial
+          ref={ringMatRef}
+          vertexShader={ringVert}
+          fragmentShader={ringFrag}
           transparent
-          opacity={1}
           depthTest={false}
-          linewidth={1}  // >1 solo funciona en WebGL2 / algunas GPUs
         />
-      </lineSegments>
-    </>
+      </points>
+    </group>
   );
 }
 
@@ -268,13 +399,13 @@ export default function HeroBackground() {
   return (
     <Canvas
       style={{ position: 'absolute', inset: 0, zIndex: -20 }}
-      camera={{ position: [0, 0, 1], near: 0.1, far: 10 }}
+      camera={{ position: [0, 0, 4], near: 0.1, far: 20 }}
       dpr={[1, 1.5]}
       gl={{ antialias: false, powerPreference: 'default', alpha: false }}
       resize={{ debounce: 100 }}
     >
       <AuroraPlane />
-      <NeuralNet />
+      <GlobeScene />
     </Canvas>
   );
 }
