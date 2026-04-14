@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { GraduationCap, Phone } from 'lucide-react';
 import type { BlogPost } from '@/types';
 
-// Lazy-loaded WebGL background — skipped on SSR to avoid canvas/WebGL issues
+// Lazy-loaded WebGL background — skipped on SSR and on mobile/low-end
 const HeroBackground = dynamic(() => import('./HeroBackground'), { ssr: false });
 
 interface HeroProps {
@@ -27,6 +27,15 @@ const BLUE = '#323D6E';
 export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
   const shouldReduceMotion = useReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
+  // Skip WebGL on mobile — GPU too weak, globe barely visible on small screens
+  const [isMobile, setIsMobile] = useState(true); // start true to avoid flash on mobile SSR
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   useEffect(() => {
     if (noticias.length <= 1) return;
@@ -48,9 +57,9 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
   return (
     <section className="relative min-h-[92vh] flex items-center overflow-hidden">
 
-      {/* WebGL animated gradient background — replaces CSS blur blobs */}
+      {/* WebGL animated gradient background — skipped only on reduced-motion */}
       {!shouldReduceMotion ? (
-        <HeroBackground />
+        <HeroBackground reducedQuality={isMobile} />
       ) : (
         // Fallback estático para usuarios con prefers-reduced-motion
         <div

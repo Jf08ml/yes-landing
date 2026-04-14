@@ -51,10 +51,16 @@ const auroraFrag = /* glsl */ `
   }
 `;
 
-function AuroraPlane() {
-  const matRef = useRef<THREE.ShaderMaterial>(null);
+const MOBILE_FPS_INTERVAL = 1 / 30; // cap at 30fps on mobile
+
+function AuroraPlane({ reducedQuality }: { reducedQuality: boolean }) {
+  const matRef     = useRef<THREE.ShaderMaterial>(null);
+  const lastTime   = useRef(0);
   useFrame(({ clock }) => {
-    if (matRef.current) matRef.current.uniforms.uTime.value = clock.getElapsedTime();
+    const t = clock.getElapsedTime();
+    if (reducedQuality && t - lastTime.current < MOBILE_FPS_INTERVAL) return;
+    lastTime.current = t;
+    if (matRef.current) matRef.current.uniforms.uTime.value = t;
   });
   return (
     <mesh renderOrder={0}>
@@ -205,16 +211,20 @@ const PAIRS: [number, number][] = [
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENTE GLOBO
 // ─────────────────────────────────────────────────────────────────────────────
-function GlobeScene() {
+function GlobeScene({ reducedQuality }: { reducedQuality: boolean }) {
   const groupRef  = useRef<THREE.Group>(null);
   const dotMatRef = useRef<THREE.ShaderMaterial>(null);
   const ringMatRef = useRef<THREE.ShaderMaterial>(null);
+  const lastTime  = useRef(0);
   const { viewport } = useThree();
 
   const globeScale = Math.max(0.77, Math.min(1.31, viewport.aspect * 0.79));
   const xOffset    = viewport.aspect > 1
-    ? Math.max(-0.8, -(viewport.aspect * 0.22))  // desktop: centrado, apenas hacia la izquierda
-    : 0;                                           // mobile: centrado
+    ? Math.max(-0.8, -(viewport.aspect * 0.22))
+    : 0;
+
+  // Mobile: 4 arc pairs instead of 8 — fewer draw calls
+  const activePairs = reducedQuality ? PAIRS.slice(0, 4) : PAIRS;
 
   const { borderGeo, enBorderGeo, frBorderGeo, dotsGeo, arcLines, ringGeo } = useMemo(() => {
     // ── Fronteras 3D — base + resaltadas por grupo ──────────────────────────
@@ -277,7 +287,7 @@ function GlobeScene() {
     dotsGeo.setAttribute('color',    new THREE.BufferAttribute(new Float32Array(dotCols), 3));
 
     // ── Arcos animados (curvas Bézier) ───────────────────────────────────────
-    const arcLines = PAIRS.map(([ei, fi]) => {
+    const arcLines = activePairs.map(([ei, fi]) => {
       const from = toVec3(EN_COUNTRIES[ei].lat, EN_COUNTRIES[ei].lng);
       const to   = toVec3(FR_COUNTRIES[fi].lat, FR_COUNTRIES[fi].lng);
       const mid  = from.clone().add(to).normalize().multiplyScalar(GLOBE_R + ARC_LIFT);
@@ -293,20 +303,25 @@ function GlobeScene() {
       return line;
     });
 
-    // ── Posiciones de llegada: destino de cada arco (FR country en orden de PAIRS)
-    const ringPts = PAIRS.flatMap(([, fi]) => {
+    // ── Posiciones de llegada: destino de cada arco
+    const ringPts = activePairs.flatMap(([, fi]) => {
       const p = toVec3(FR_COUNTRIES[fi].lat, FR_COUNTRIES[fi].lng, GLOBE_R + 0.05);
       return [p.x, p.y, p.z];
     });
     const ringGeo = new THREE.BufferGeometry();
     ringGeo.setAttribute('position',      new THREE.BufferAttribute(new Float32Array(ringPts), 3));
-    ringGeo.setAttribute('aArrivalPhase', new THREE.BufferAttribute(new Float32Array(PAIRS.length), 1));
+    ringGeo.setAttribute('aArrivalPhase', new THREE.BufferAttribute(new Float32Array(activePairs.length), 1));
 
     return { borderGeo, enBorderGeo, frBorderGeo, dotsGeo, arcLines, ringGeo };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reducedQuality]);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
+    // Cap to 30fps on mobile
+    if (reducedQuality && t - lastTime.current < MOBILE_FPS_INTERVAL) return;
+    lastTime.current = t;
+
     if (groupRef.current) groupRef.current.rotation.y = t * 0.07;
     if (dotMatRef.current) dotMatRef.current.uniforms.uTime.value = t;
 
@@ -318,8 +333,6 @@ function GlobeScene() {
       const head  = Math.floor(phase * ARC_PTS);
       const tail  = Math.max(0, head - TAIL_PTS);
       line.geometry.setDrawRange(tail, head - tail);
-
-      // Fase de llegada: sube de 0→1 en el último 25% del ciclo, luego cae a 0
       arrivalArr[i] = Math.max(0, (phase - 0.75) / 0.25);
     });
     arrivalAttr.needsUpdate = true;
@@ -328,15 +341,15 @@ function GlobeScene() {
   return (
     <group ref={groupRef} position={[xOffset, 0, 0]} scale={globeScale}>
 
-      {/* Océano — tinte muy suave para dar profundidad sin tapar la aurora */}
+      {/* Océano */}
       <mesh renderOrder={1}>
-        <sphereGeometry args={[GLOBE_R, 32, 20]} />
+        <sphereGeometry args={reducedQuality ? [GLOBE_R, 24, 14] : [GLOBE_R, 32, 20]} />
         <meshBasicMaterial color="#1A3A6A" transparent opacity={0.18} depthTest={false} />
       </mesh>
 
-      {/* Atmósfera — halo fino en el borde, FrontSide */}
+      {/* Atmósfera */}
       <mesh renderOrder={2}>
-        <sphereGeometry args={[GLOBE_R + 0.08, 28, 14]} />
+        <sphereGeometry args={reducedQuality ? [GLOBE_R + 0.08, 20, 10] : [GLOBE_R + 0.08, 28, 14]} />
         <shaderMaterial
           vertexShader={atmVert}
           fragmentShader={atmFrag}
@@ -395,17 +408,17 @@ function GlobeScene() {
 // ─────────────────────────────────────────────────────────────────────────────
 // CANVAS
 // ─────────────────────────────────────────────────────────────────────────────
-export default function HeroBackground() {
+export default function HeroBackground({ reducedQuality = false }: { reducedQuality?: boolean }) {
   return (
     <Canvas
       style={{ position: 'absolute', inset: 0, zIndex: -20 }}
       camera={{ position: [0, 0, 4], near: 0.1, far: 20 }}
-      dpr={[1, 1.5]}
+      dpr={reducedQuality ? 1 : [1, 1.5]}
       gl={{ antialias: false, powerPreference: 'default', alpha: false }}
       resize={{ debounce: 100 }}
     >
-      <AuroraPlane />
-      <GlobeScene />
+      <AuroraPlane reducedQuality={reducedQuality} />
+      <GlobeScene reducedQuality={reducedQuality} />
     </Canvas>
   );
 }
