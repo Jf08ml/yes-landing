@@ -28,7 +28,9 @@ async function fetchDoc<T>(docPath: string, fallback: T): Promise<T> {
   try {
     const snap = await getDoc(doc(db, 'siteConfig', docPath));
     if (snap.exists()) {
-      return snap.data() as T;
+      // Merge with fallback so new fields added to the schema don't break
+      // when the existing Firestore document predates them.
+      return { ...fallback, ...snap.data() } as T;
     }
     return fallback;
   } catch (error) {

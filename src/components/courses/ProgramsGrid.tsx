@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Globe, Check, ArrowRight, ArrowUpRight } from 'lucide-react';
 import type { Program } from '@/types';
 
 const LANG_COLORS = {
   ingles: { accent: '#C1121F', light: 'rgba(193,18,31,0.10)', label: 'Inglés', flag: '🇺🇸' },
   frances: { accent: '#1A56DB', light: 'rgba(26,86,219,0.10)', label: 'Francés', flag: '🇫🇷' },
-  ambos: { accent: '#6B21A8', light: 'rgba(107,33,168,0.10)', label: 'Ambos', flag: '🌐' },
+  ambos: { accent: '#6B21A8', light: 'rgba(107,33,168,0.10)', label: 'Ambos', flag: null },
 };
 
 type Filter = 'todos' | 'ingles' | 'frances';
@@ -30,10 +31,11 @@ function ProgramCard({ program, waLink, index }: { program: Program; waLink: str
         {/* Badges */}
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           <span
-            className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+            className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
             style={{ background: colors.light, color: colors.accent }}
           >
-            {colors.flag} {colors.label}
+            {colors.flag !== null ? colors.flag : <Globe className="w-3 h-3" />}
+            {colors.label}
           </span>
           {program.tag && (
             <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
@@ -59,8 +61,14 @@ function ProgramCard({ program, waLink, index }: { program: Program; waLink: str
         <div className="space-y-2.5 flex-1">
           {program.levels && (
             <div className="flex gap-2 text-sm">
-              <span className="text-gray-400 shrink-0">Duración</span>
+              <span className="text-gray-400 shrink-0">Niveles</span>
               <span className="font-semibold text-gray-700">{program.levels}</span>
+            </div>
+          )}
+          {program.duration && (
+            <div className="flex gap-2 text-sm">
+              <span className="text-gray-400 shrink-0">Duración</span>
+              <span className="font-semibold text-gray-700">{program.duration}</span>
             </div>
           )}
           {program.modality && (
@@ -99,7 +107,7 @@ function ProgramCard({ program, waLink, index }: { program: Program; waLink: str
             <ul className="space-y-1.5">
               {program.highlights.map((h, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                  <span className="mt-0.5 shrink-0" style={{ color: colors.accent }}>✓</span>
+                  <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: colors.accent }} />
                   {h}
                 </li>
               ))}
@@ -129,15 +137,25 @@ function ProgramCard({ program, waLink, index }: { program: Program; waLink: str
         </div>
 
         {/* CTA */}
+        {program.infoUrl && (
+          <a
+            href={program.infoUrl}
+            className="mt-5 inline-flex items-center justify-center gap-1.5 text-sm font-semibold py-2.5 px-5 rounded-xl border transition-all hover:bg-gray-50"
+            style={{ color: colors.accent, borderColor: `${colors.accent}40` }}
+          >
+            Ver más información
+            <ArrowUpRight className="w-4 h-4" />
+          </a>
+        )}
         <a
           href={waLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-5 inline-flex items-center justify-center gap-2 text-sm font-bold py-3 px-5 rounded-xl text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="mt-3 inline-flex items-center justify-center gap-2 text-sm font-bold py-3 px-5 rounded-xl text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
           style={{ background: colors.accent }}
         >
           Consultar disponibilidad
-          <span>→</span>
+          <ArrowRight className="w-4 h-4" />
         </a>
       </div>
     </motion.div>

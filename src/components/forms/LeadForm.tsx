@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 
 interface LeadFormProps {
   sourcePage: string;
@@ -46,7 +47,7 @@ export default function LeadForm({ sourcePage }: LeadFormProps) {
   if (status === 'success') {
     return (
       <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
-        <div className="text-4xl mb-3">✅</div>
+        <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
         <h3 className="text-xl font-bold text-green-800 mb-2">¡Mensaje enviado!</h3>
         <p className="text-green-700 text-sm">
           Nos pondremos en contacto contigo pronto. También puedes escribirnos directamente por WhatsApp.

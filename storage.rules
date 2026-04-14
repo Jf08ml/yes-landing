@@ -3,37 +3,49 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Public read for all uploaded assets
-    match /{allPaths=**} {
-      allow read: if true;
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['admin@yes.edu.co'];
     }
 
-    // Only authenticated admins can upload
+    // Public read + list for all assets
+    match /{allPaths=**} {
+      allow read: if true;
+      // Admins can delete any file — delete has no request.resource so must be separate
+      allow delete: if isAdmin();
+    }
+
+    // Images — max 5 MB
     match /blog-images/{filename} {
-      allow write: if request.auth != null
-        && request.auth.token.email in [
-          'admin@yes.edu.co'
-        ]
-        && request.resource.size < 5 * 1024 * 1024   // max 5 MB
+      allow create, update: if isAdmin()
+        && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
 
     match /uploads/{filename} {
-      allow write: if request.auth != null
-        && request.auth.token.email in [
-          'admin@yes.edu.co'
-        ]
+      allow create, update: if isAdmin()
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
 
     match /yes-factor-winners/{filename} {
-      allow write: if request.auth != null
-        && request.auth.token.email in [
-          'admin@yes.edu.co'
-        ]
+      allow create, update: if isAdmin()
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
+    }
+
+    // Videos — max 200 MB
+    match /yes-factor-videos/{filename} {
+      allow create, update: if isAdmin()
+        && request.resource.size < 200 * 1024 * 1024
+        && request.resource.contentType.matches('video/.*');
+    }
+
+    // Documents (PDF) — max 20 MB
+    match /yes-factor-docs/{filename} {
+      allow create, update: if isAdmin()
+        && request.resource.size < 20 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
     }
   }
 }

@@ -48,24 +48,32 @@ export const mockHome: HomeContent = {
       icon: '🏛️',
       title: 'Instalaciones Modernas',
       description:
-        'Sede propia en el barrio Quirinal, Neiva. Aulas equipadas con tecnología para una experiencia de aprendizaje óptima.',
+        'Sede en el barrio Quirinal, Neiva. Aulas equipadas con tecnología para una experiencia de aprendizaje óptima.',
     },
   ],
+  coursesPreviewSection: {
+    sectionLabel: 'Programas académicos',
+    heading1: 'Domina el idioma.',
+    heading2: 'Domina el mundo.',
+    subheading: 'Dos idiomas. Una transformación.\nComienza tu camino hacia el mundo.',
+  },
   coursesPreview: [
     {
       id: 'ingles',
       language: 'ingles',
-      title: 'Cursos de Inglés',
+      title: 'Inglés',
+      tagline: 'Inglés profesional para mentes globales.',
       description:
-        'Desde principiante hasta avanzado. Modalidades intensiva, semestral y personalizada con certificación B1 garantizada.',
+        'Domina el idioma que abre puertas en tecnología, negocios y cultura internacional.',
       levels: 'A1 – C1',
     },
     {
       id: 'frances',
       language: 'frances',
-      title: 'Cursos de Francés',
+      title: 'Francés',
+      tagline: 'El idioma de la cultura y la diplomacia.',
       description:
-        'Aprende francés con profesores especializados. Ideal para estudios, trabajo o viajes a países francófonos.',
+        'Conecta con Europa y el mundo francófono. Prepárate para la certificación DELF.',
       levels: 'A1 – B2',
     },
   ],
@@ -135,6 +143,8 @@ export const mockContact: ContactContent = {
   phone: '+57 313 3973411',
   email: 'contactenos@yes.edu.co',
   address: 'Carrera 7 con Calle 17A, esquina, Barrio Quirinal',
+  footerDescription: 'YES YOUR ENGLISH SERVICES SAS. Instituto de educación no formal en Neiva, Huila. Formando profesionales bilingües desde 1993.',
+  footerLicense: 'Licencia de Funcionamiento No. 1598 — MEN (27 de agosto de 2024)',
   neighborhood: 'Quirinal',
   city: 'Neiva',
   region: 'Huila',
@@ -162,6 +172,8 @@ export const mockContact: ContactContent = {
 export const mockYESFactor: YESFactorContent = {
   title: 'THE YES FACTOR',
   description: 'THE YES FACTOR es el concurso de canto en inglés más esperado de Neiva. Durante años, hemos brindado un espacio para que nuestros estudiantes de todas las edades demuestren su talento, pierdan el miedo escénico y practiquen su pronunciación de una forma divertida y artística.',
+  backgroundImageDesktop: '',
+  backgroundImageMobile: '',
   videoUrl: 'https://yes.edu.co/wp-content/uploads/2023/06/YES-Historia-2023.mp4',
   winners: [
     { name: 'Karen Andrea Ramos', category: 'YES FACTOR TEENS', place: '1st Place' },

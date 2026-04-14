@@ -5,81 +5,70 @@ import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { FrenchFlagBg, USFlagBg } from "./Flag";
+import type { CoursePreview, HomeContent } from "@/types";
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Design constants (no editables) ─────────────────────────────────────────
 
-const COURSES = [
-  {
-    id: "ingles",
-    flag: "🇺🇸",
+const DESIGN: Record<string, {
+  flagType: "us" | "fr";
+  skyline: "nyc" | "paris";
+  lang: string;
+  cardBg: string;
+  inkColor: string;
+  accentColor: string;
+  radialBg: string;
+  shadowBase: string;
+  shadowHover: string;
+  delay: number;
+  floatDelay: number;
+}> = {
+  ingles: {
+    flagType: "us",
+    skyline: "nyc",
     lang: "EN",
-    title: "Inglés",
-    sub: "A1 – C1",
-    tagline: "Inglés profesional para mentes globales.",
-    desc: "Domina el idioma que abre puertas en tecnología, negocios y cultura internacional.",
     cardBg: "#FAFCFF",
     inkColor: "#0F172A",
     accentColor: "#C1121F",
-    accentLight: "rgba(193,18,31,0.12)",
-    radialBg:
-      "radial-gradient(ellipse 90% 55% at 50% 0%, rgba(59,130,246,0.10) 0%, transparent 68%)",
-    shadowBase:
-      "0 4px 24px -4px rgba(193,18,31,0.12), 0 1px 4px -2px rgba(15,23,42,0.06)",
-    shadowHover:
-      "0 28px 72px -10px rgba(193,18,31,0.28), 0 8px 24px -6px rgba(15,23,42,0.10)",
-    href: "/cursos",
+    radialBg: "radial-gradient(ellipse 90% 55% at 50% 0%, rgba(59,130,246,0.10) 0%, transparent 68%)",
+    shadowBase: "0 4px 24px -4px rgba(193,18,31,0.12), 0 1px 4px -2px rgba(15,23,42,0.06)",
+    shadowHover: "0 28px 72px -10px rgba(193,18,31,0.28), 0 8px 24px -6px rgba(15,23,42,0.10)",
     delay: 0,
     floatDelay: 0,
-    skyline: "nyc" as const,
-    flagType: "us" as const,
   },
-  {
-    id: "frances",
-    flag: "🇫🇷",
+  frances: {
+    flagType: "fr",
+    skyline: "paris",
     lang: "FR",
-    title: "Francés",
-    sub: "A1 – B2",
-    tagline: "El idioma de la cultura y la diplomacia.",
-    desc: "Conecta con Europa y el mundo francófono. Prepárate para la certificación DELF.",
     cardBg: "#F7F8FF",
     inkColor: "#1D3557",
     accentColor: "#1A56DB",
-    accentLight: "rgba(26,86,219,0.10)",
-    radialBg:
-      "radial-gradient(ellipse 90% 55% at 50% 0%, rgba(26,86,219,0.10) 0%, transparent 68%)",
-    shadowBase:
-      "0 4px 24px -4px rgba(26,86,219,0.12), 0 1px 4px -2px rgba(29,53,87,0.06)",
-    shadowHover:
-      "0 28px 72px -10px rgba(26,86,219,0.28), 0 8px 24px -6px rgba(29,53,87,0.10)",
-    href: "/cursos",
+    radialBg: "radial-gradient(ellipse 90% 55% at 50% 0%, rgba(26,86,219,0.10) 0%, transparent 68%)",
+    shadowBase: "0 4px 24px -4px rgba(26,86,219,0.12), 0 1px 4px -2px rgba(29,53,87,0.06)",
+    shadowHover: "0 28px 72px -10px rgba(26,86,219,0.28), 0 8px 24px -6px rgba(29,53,87,0.10)",
     delay: 0.12,
     floatDelay: 1.1,
-    skyline: "paris" as const,
-    flagType: "fr" as const,
   },
-] as const;
-
+};
 
 // ─── Course Card ──────────────────────────────────────────────────────────────
 
-type Course = (typeof COURSES)[number];
-
-export function CourseCard({ course }: { course: Course }) {
+function CourseCard({ course }: { course: CoursePreview }) {
   const reduced = useReducedMotion();
   const [hovered, setHovered] = useState(false);
+  const d = DESIGN[course.language] ?? DESIGN.ingles;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 36 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-48px" }}
-      transition={{ duration: 0.7, delay: course.delay, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.7, delay: d.delay, ease: [0.22, 1, 0.36, 1] }}
     >
-      <Link href={course.href}>
+      <Link href="/cursos">
         <motion.div
           onHoverStart={() => setHovered(true)}
           onHoverEnd={() => setHovered(false)}
-          style={{ boxShadow: hovered ? course.shadowHover : course.shadowBase }}
+          style={{ boxShadow: hovered ? d.shadowHover : d.shadowBase }}
           whileHover={reduced ? {} : { y: -6 }}
           transition={{ type: "spring", stiffness: 200, damping: 26 }}
           className="relative overflow-hidden rounded-[28px] cursor-pointer
@@ -87,14 +76,14 @@ export function CourseCard({ course }: { course: Course }) {
                      border border-black/[0.6]"
         >
           {/* ── Flag shader — ocupa todo el card ── */}
-          {course.flagType === "us" ? <USFlagBg /> : <FrenchFlagBg />}
+          {d.flagType === "us" ? <USFlagBg /> : <FrenchFlagBg />}
 
           {/* ── Skyline de ciudad sobre la bandera ── */}
           <div className="absolute bottom-0 left-0 w-full pointer-events-none select-none z-[1]"
-            style={{ filter: `drop-shadow(0 -4px 12px ${course.inkColor}22)` }}
+            style={{ filter: `drop-shadow(0 -4px 12px ${d.inkColor}22)` }}
           >
             <Image
-              src={course.skyline === "nyc" ? "/NYCSkyline-no-bg.png" : "/france-skyline.png"}
+              src={d.skyline === "nyc" ? "/NYCSkyline-no-bg.png" : "/france-skyline.png"}
               alt=""
               width={800}
               height={210}
@@ -102,7 +91,7 @@ export function CourseCard({ course }: { course: Course }) {
             />
           </div>
 
-          {/* ── Velo superior oscuro para que la bandera no tape el texto ── */}
+          {/* ── Velo superior oscuro ── */}
           <div className="absolute inset-0 pointer-events-none"
             style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, transparent 55%)` }}
           />
@@ -110,14 +99,14 @@ export function CourseCard({ course }: { course: Course }) {
           {/* ── Franja accent top ── */}
           <div
             className="absolute top-0 left-0 right-0 h-[3px] z-20"
-            style={{ background: `linear-gradient(90deg, transparent 0%, ${course.accentColor} 20%, ${course.accentColor} 80%, transparent 100%)` }}
+            style={{ background: `linear-gradient(90deg, transparent 0%, ${d.accentColor} 20%, ${d.accentColor} 80%, transparent 100%)` }}
           />
 
           {/* ── Panel de contenido inferior ── */}
           <div
             className="absolute bottom-0 left-0 right-0 z-10"
             style={{
-              background: `linear-gradient(to top, ${course.cardBg}ee 0%, ${course.cardBg}bb 38%, ${course.cardBg}44 58%, transparent 100%)`,
+              background: `linear-gradient(to top, ${d.cardBg}ee 0%, ${d.cardBg}bb 38%, ${d.cardBg}44 58%, transparent 100%)`,
               paddingTop: '5rem',
             }}
           >
@@ -125,53 +114,53 @@ export function CourseCard({ course }: { course: Course }) {
 
               {/* Idioma badge */}
               <span
-                className="inline-flex items-center text-[10px] font-bold uppercase
+                className="inline-flex items-center text-[15px] font-bold uppercase
                             tracking-[0.18em] px-3 py-1 rounded-full mb-3"
                 style={{
-                  color: course.inkColor,
-                  background: `${course.cardBg}cc`,
-                  border: `1px solid ${course.accentColor}55`,
+                  color: d.inkColor,
+                  background: `${d.cardBg}cc`,
+                  border: `1px solid ${d.accentColor}55`,
                   backdropFilter: 'blur(4px)',
                 }}
               >
-                {course.sub}
+                {course.levels}
               </span>
 
               {/* Title */}
               <h3
-                className="text-[2rem] font-black tracking-tight leading-none mb-1.5"
-                style={{ color: course.inkColor }}
+                className="text-[2.5rem] font-black tracking-tight leading-none mb-1.5"
+                style={{ color: d.inkColor }}
               >
                 {course.title}
               </h3>
 
               {/* Divider */}
-              <div className="w-8 h-[2px] rounded-full mb-2.5" style={{ background: course.accentColor }} />
+              <div className="w-8 h-[2px] rounded-full mb-2.5" style={{ background: d.accentColor }} />
 
               {/* Tagline */}
               <p
-                className="text-[12px] font-semibold mb-2.5 max-w-[220px] leading-snug"
-                style={{ color: course.accentColor }}
+                className="text-[18px] font-semibold mb-2.5 max-w-[220px] leading-snug"
+                style={{ color: d.accentColor }}
               >
                 {course.tagline}
               </p>
 
               {/* Description */}
               <p
-                className="text-[12px] leading-relaxed mb-5 max-w-[240px] font-normal"
-                style={{ color: `${course.inkColor}99` }}
+                className="text-[17px] leading-relaxed mb-5 max-w-[270px] font-medium"
+                style={{ color: `${d.inkColor}CC` }}
               >
-                {course.desc}
+                {course.description}
               </p>
 
               {/* CTA */}
               <motion.div
                 className="inline-flex items-center gap-2.5 text-[13px] font-bold px-6 py-3 rounded-xl text-white"
                 style={{
-                  background: course.accentColor,
+                  background: d.accentColor,
                   boxShadow: hovered
-                    ? `0 10px 32px -6px ${course.accentColor}55`
-                    : `0 4px 16px -4px ${course.accentColor}33`,
+                    ? `0 10px 32px -6px ${d.accentColor}55`
+                    : `0 4px 16px -4px ${d.accentColor}33`,
                 }}
                 whileHover={reduced ? {} : { scale: 1.04, y: -2 }}
                 whileTap={reduced ? {} : { scale: 0.97 }}
@@ -189,7 +178,7 @@ export function CourseCard({ course }: { course: Course }) {
             </div>
           </div>
 
-          {/* ── Watermark idioma (top-right, sobre la bandera) ── */}
+          {/* ── Watermark idioma ── */}
           <div
             className="absolute top-5 right-6 font-black select-none pointer-events-none z-10"
             style={{
@@ -201,7 +190,7 @@ export function CourseCard({ course }: { course: Course }) {
               fontFamily: 'ui-monospace, monospace',
             }}
           >
-            {course.lang}
+            {d.lang}
           </div>
         </motion.div>
       </Link>
@@ -211,7 +200,12 @@ export function CourseCard({ course }: { course: Course }) {
 
 // ─── Section ──────────────────────────────────────────────────────────────────
 
-export default function CoursesPreview() {
+interface Props {
+  section: HomeContent['coursesPreviewSection'];
+  courses: CoursePreview[];
+}
+
+export default function CoursesPreview({ section, courses }: Props) {
   return (
     <section
       id="cursos"
@@ -226,7 +220,7 @@ export default function CoursesPreview() {
           backgroundSize: "28px 28px",
         }}
       />
-      {/* Ambient color washes per idioma */}
+      {/* Ambient color washes */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -244,27 +238,23 @@ export default function CoursesPreview() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-[10px] font-black uppercase tracking-[0.32em] mb-3 text-[#0F172A]/30"
+            className="text-[30px] font-black uppercase tracking-[0.32em] mb-3 text-black"
           >
-            Programas académicos
+            {section.sectionLabel}
           </motion.p>
 
           <motion.h2
             initial={{ opacity: 0, y: 22 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{
-              delay: 0.07,
-              duration: 0.7,
-              ease: [0.22, 1, 0.36, 1],
-            }}
+            transition={{ delay: 0.07, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="tracking-tight"
           >
             <span className="block font-light text-[#0F172A] text-2xl sm:text-[1.7rem] md:text-[2rem] tracking-[0.01em]">
-              Domina el idioma.
+              {section.heading1}
             </span>
             <span className="block font-black text-[#C1121F] text-3xl sm:text-[2.3rem] md:text-[2.8rem] tracking-[-0.01em] mt-0.5">
-              Domina el mundo.
+              {section.heading2}
             </span>
           </motion.h2>
 
@@ -273,17 +263,15 @@ export default function CoursesPreview() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.16, duration: 0.6 }}
-            className="mt-3 text-[14px] max-w-xs mx-auto font-normal leading-relaxed text-[#0F172A]/45"
+            className="mt-3 text-[20px] max-w-xs mx-auto font-normal leading-relaxed text-[#0F172A]/45 whitespace-pre-line"
           >
-            Dos idiomas. Una transformación.
-            <br />
-            Comienza tu camino hacia el mundo.
+            {section.subheading}
           </motion.p>
         </div>
 
         {/* ── Cards ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-7">
-          {COURSES.map((course) => (
+          {courses.map((course) => (
             <CourseCard key={course.id} course={course} />
           ))}
         </div>

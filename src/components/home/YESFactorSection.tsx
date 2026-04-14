@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
+import { Mic2, Music } from 'lucide-react';
 import Section from '@/components/ui/Section';
 
 interface YESFactorSectionProps {
@@ -9,13 +11,47 @@ interface YESFactorSectionProps {
     description: string;
     ctaText: string;
   };
+  backgroundImageDesktop?: string;
+  backgroundImageMobile?: string;
 }
 
-export default function YESFactorSection({ preview }: YESFactorSectionProps) {
+export default function YESFactorSection({ preview, backgroundImageDesktop, backgroundImageMobile }: YESFactorSectionProps) {
+  const hasImage = !!(backgroundImageDesktop || backgroundImageMobile);
+
+  if (hasImage) {
+    const desktopSrc = backgroundImageDesktop || backgroundImageMobile!;
+    const mobileSrc  = backgroundImageMobile  || backgroundImageDesktop!;
+
+    return (
+      <Section className="bg-surface overflow-hidden">
+        <Link href="/yes-factor" className="block rounded-3xl overflow-hidden">
+          {/* Mobile */}
+          <Image
+            src={mobileSrc}
+            alt="YES Factor"
+            width={0}
+            height={0}
+            sizes="100vw"
+            className="md:hidden w-full h-auto block"
+          />
+          {/* Desktop */}
+          <Image
+            src={desktopSrc}
+            alt="YES Factor"
+            width={0}
+            height={0}
+            sizes="100vw"
+            className="hidden md:block w-full h-auto"
+          />
+        </Link>
+      </Section>
+    );
+  }
+
+  /* ── Fallback sin imagen: degradado + texto ── */
   return (
     <Section className="bg-surface overflow-hidden">
       <div className="relative bg-gradient-to-br from-primary to-primary-dark rounded-3xl p-8 sm:p-12 lg:p-16 text-white text-center overflow-hidden">
-        {/* Decorative elements */}
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl" />
 
@@ -39,13 +75,8 @@ export default function YESFactorSection({ preview }: YESFactorSectionProps) {
           </div>
         </div>
 
-        {/* Talent/Music icons floating decoration */}
-        <div className="absolute left-10 top-1/2 -translate-y-1/2 hidden xl:block text-6xl opacity-20 rotate-12">
-          🎙️
-        </div>
-        <div className="absolute right-10 top-1/2 -translate-y-1/2 hidden xl:block text-6xl opacity-20 -rotate-12">
-          🎵
-        </div>
+        <Mic2  className="absolute left-10 top-1/2 -translate-y-1/2 hidden xl:block w-16 h-16 text-white opacity-20 rotate-12" />
+        <Music className="absolute right-10 top-1/2 -translate-y-1/2 hidden xl:block w-16 h-16 text-white opacity-20 -rotate-12" />
       </div>
     </Section>
   );

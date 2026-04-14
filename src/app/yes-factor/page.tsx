@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
+import { Mic, FileText, Star, Trophy } from 'lucide-react';
 import { fetchYESFactorContent, fetchContactContent } from '@/lib/content';
 
 import Section from '@/components/ui/Section';
@@ -26,29 +28,44 @@ export default async function YESFactorPage() {
   return (
     <div className="pt-20">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-primary to-primary-dark py-10 sm:py-14 px-4 text-center">
-        <div className="max-w-4xl mx-auto">
-          <span className="bg-secondary text-surface-dark text-xs font-black px-4 py-1.5 rounded-full mb-4 inline-block tracking-widest uppercase">
-            Evento Anual
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-black text-white mb-4">
-            {data.title}
-          </h1>
-          <p className="text-blue-100 text-base sm:text-lg max-w-2xl mx-auto mb-7">
-            {data.description}
-          </p>
-          {data.registrationStatus === 'open' && (
-            <a
-              href={data.registrationUrl || waLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-secondary hover:bg-secondary-dark text-surface-dark font-bold px-10 py-5 rounded-2xl text-lg transition-all hover:scale-105 shadow-2xl inline-block"
-            >
-              🎤 Inscribirse ahora
-            </a>
-          )}
+      {(data.backgroundImageDesktop || data.backgroundImageMobile) ? (
+        <div className="w-full">
+          <Image
+            src={data.backgroundImageMobile || data.backgroundImageDesktop!}
+            alt={data.title}
+            width={0}
+            height={0}
+            sizes="100vw"
+            priority
+            className="md:hidden w-full h-auto block"
+          />
+          <Image
+            src={data.backgroundImageDesktop || data.backgroundImageMobile!}
+            alt={data.title}
+            width={0}
+            height={0}
+            sizes="100vw"
+            priority
+            className="hidden md:block w-full h-auto"
+          />
         </div>
-      </div>
+      ) : (
+        <div className="bg-gradient-to-br from-primary to-primary-dark py-10 sm:py-14 px-4 text-center">
+          <div className="max-w-4xl mx-auto">
+            <span className="bg-secondary text-surface-dark text-xs font-black px-4 py-1.5 rounded-full mb-4 inline-block tracking-widest uppercase">
+              Evento Anual
+            </span>
+            <h1 className="text-3xl sm:text-5xl font-black text-white mb-4">{data.title}</h1>
+            <p className="text-blue-100 text-base sm:text-lg max-w-2xl mx-auto mb-7">{data.description}</p>
+            {data.registrationStatus === 'open' && (
+              <a href={data.registrationUrl || waLink} target="_blank" rel="noopener noreferrer"
+                className="bg-secondary hover:bg-secondary-dark text-surface-dark font-bold px-10 py-5 rounded-2xl text-lg transition-all hover:scale-105 shadow-2xl inline-flex items-center gap-2">
+                <Mic className="w-5 h-5" /> Inscribirse ahora
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Video / Info */}
       <Section className="bg-white">
@@ -71,7 +88,7 @@ export default async function YESFactorPage() {
                   rel="noopener noreferrer" 
                   className="text-primary font-bold hover:underline flex items-center gap-2"
                 >
-                  📄 Descargar reglamento (PDF)
+                  <FileText className="w-4 h-4 text-blue-500" /> Descargar reglamento (PDF)
                 </a>
               )}
             </div>
@@ -86,8 +103,8 @@ export default async function YESFactorPage() {
                 poster="/yes-factor-poster.jpg"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-6xl opacity-20">
-                ⭐
+              <div className="w-full h-full flex items-center justify-center opacity-20">
+                <Star className="w-16 h-16 text-yellow-400" />
               </div>
             )}
           </div>
@@ -133,7 +150,7 @@ export default async function YESFactorPage() {
                             </div>
                           ) : (
                             <div className="aspect-square w-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                              <span className="text-5xl">🏆</span>
+                              <Trophy className="w-14 h-14 text-yellow-500 opacity-60" />
                             </div>
                           )}
                           <div className="p-5 flex flex-col flex-1">

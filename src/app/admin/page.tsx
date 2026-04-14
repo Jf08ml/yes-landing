@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase';
 import ImageUploader from '@/components/admin/ImageUploader';
 import RichTextEditor from '@/components/admin/RichTextEditor';
+import StorageMonitor from '@/components/admin/StorageMonitor';
 import type {
   HomeContent,
   CoursesContent,
@@ -32,7 +33,22 @@ import {
   mockBlogContent
 } from '@/lib/mockData';
 
-type TabName = 'home' | 'courses' | 'contact' | 'yesFactor' | 'blog' | 'testimonials';
+type TabName = 'home' | 'courses' | 'contact' | 'yesFactor' | 'blog' | 'testimonials' | 'storage';
+
+async function triggerRevalidate(slugs?: string[]): Promise<void> {
+  try {
+    await fetch('/api/revalidate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-revalidate-secret': process.env.NEXT_PUBLIC_REVALIDATE_SECRET ?? '',
+      },
+      body: JSON.stringify({ slugs: slugs ?? [] }),
+    });
+  } catch {
+    // revalidación best-effort, no bloquea el flujo
+  }
+}
 
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -54,9 +70,10 @@ export default function AdminPage() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [testimonialSubmissions, setTestimonialSubmissions] = useState<TestimonialSubmission[]>([]);
+  const [storageUsageRatio, setStorageUsageRatio] = useState<number>(-1); // -1 = not loaded yet
   const [activeModal, setActiveModal] = useState<string | null>(null);
   // activeModal values: 'home-seo' | 'home-hero' | 'home-stats' | 'home-trustbar' | 'home-ctafinal'
-  //   | 'home-yesfactorpreview' | 'home-features' | 'home-testimonials' | 'home-faq'
+  //   | 'home-yesfactorpreview' | 'home-features' | 'home-testimonials' | 'home-faq' | 'home-coursespreview'
   //   | 'yf-info' | 'yf-winner-{idx}' | 'yf-newcat'
   //   | 'blog-content' | 'blog-{postId}'
   //   | 'contact-info' | 'contact-social'
@@ -89,10 +106,10 @@ export default function AdminPage() {
         getDocs(collection(db, 'blogPosts')),
         getDocs(query(collection(db, 'testimonials'), orderBy('createdAt', 'desc'))),
       ]);
-      if (homeSnap.exists()) setHome(homeSnap.data() as HomeContent);
+      if (homeSnap.exists()) setHome({ ...mockHome, ...homeSnap.data() } as HomeContent);
       if (coursesSnap.exists()) setCourses(coursesSnap.data() as CoursesContent);
       if (programsSnap.exists()) setPrograms((programsSnap.data().items ?? []) as Program[]);
-      if (contactSnap.exists()) setContact(contactSnap.data() as ContactContent);
+      if (contactSnap.exists()) setContact({ ...mockContact, ...contactSnap.data() } as ContactContent);
       if (yesFactorSnap.exists()) setYesFactor(yesFactorSnap.data() as YESFactorContent);
       if (blogContentSnap.exists()) setBlogContent(blogContentSnap.data() as BlogContent);
       setBlogPosts(blogPostsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
@@ -131,7 +148,8 @@ export default function AdminPage() {
       if (yesFactor) updates.push(updateDoc(doc(db, 'siteConfig', 'yesFactor'), { ...yesFactor }));
       if (blogContent) updates.push(updateDoc(doc(db, 'siteConfig', 'blogContent'), { ...blogContent }));
       await Promise.all(updates);
-      setSaveMsg('✅ Cambios guardados. Se reflejarán en el sitio en ~5 minutos (ISR).');
+      await triggerRevalidate();
+      setSaveMsg('✅ Cambios guardados y sitio actualizado.');
     } catch (err) {
       console.error('Save error:', err);
       setSaveMsg('❌ Error al guardar. Verifica permisos de Firebase.');
@@ -271,26 +289,40 @@ export default function AdminPage() {
       <div className="max-w-5xl mx-auto p-4 sm:p-8">
         {/* Tabs */}
         <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 border border-gray-100 overflow-x-auto">
-          {(['home', 'courses', 'blog', 'yesFactor', 'contact', 'testimonials'] as TabName[]).map((tab) => {
+          {(['home', 'courses', 'blog', 'yesFactor', 'contact', 'testimonials', 'storage'] as TabName[]).map((tab) => {
             const labels: Record<TabName, string> = {
               home: 'Home', courses: 'Cursos', blog: 'Blog',
               contact: 'Contacto', yesFactor: 'YES Factor', testimonials: 'Testimonios',
+              storage: '🗄️ Storage',
             };
             const pending = tab === 'testimonials'
               ? testimonialSubmissions.filter(t => !t.approved).length
               : 0;
+            const storageWarn = tab === 'storage' && storageUsageRatio >= 0.80;
+            const storageCrit = tab === 'storage' && storageUsageRatio >= 0.95;
             return (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`relative flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
-                  activeTab === tab ? 'bg-primary text-white' : 'text-text-light hover:bg-gray-50'
+                className={`relative flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  activeTab === tab
+                    ? storageCrit ? 'bg-red-500 text-white'
+                    : storageWarn ? 'bg-amber-500 text-white'
+                    : 'bg-primary text-white'
+                    : storageCrit ? 'text-red-600 bg-red-50 hover:bg-red-100 ring-1 ring-red-300'
+                    : storageWarn ? 'text-amber-700 bg-amber-50 hover:bg-amber-100 ring-1 ring-amber-300'
+                    : 'text-text-light hover:bg-gray-50'
                 }`}
               >
                 {labels[tab]}
                 {pending > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                     {pending}
+                  </span>
+                )}
+                {storageWarn && activeTab !== 'storage' && (
+                  <span className={`absolute -top-1 -right-1 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center ${storageCrit ? 'bg-red-500' : 'bg-amber-500'}`}>
+                    !
                   </span>
                 )}
               </button>
@@ -309,6 +341,7 @@ export default function AdminPage() {
             <SectionCard title="CTA Final" icon="📣" desc={home.ctaFinal.title} onEdit={() => setActiveModal('home-ctafinal')} />
             <SectionCard title="YES Factor preview" icon="⭐" desc={home.yesFactorPreview.title} onEdit={() => setActiveModal('home-yesfactorpreview')} />
             <SectionCard title="Features" icon="🧩" badge={`${home.features.length}`} desc={home.features.map(f => f.title).join(', ')} onEdit={() => setActiveModal('home-features')} />
+            <SectionCard title="Cursos Preview" icon="🌐" badge={`${home.coursesPreview.length}`} desc={home.coursesPreview.map(c => c.title).join(' · ')} onEdit={() => setActiveModal('home-coursespreview')} />
             <SectionCard title="FAQ" icon="❓" badge={`${home.faq.length}`} desc={home.faq.map(f => f.question).slice(0,2).join(' · ')} onEdit={() => setActiveModal('home-faq')} />
           </div>
 
@@ -436,6 +469,41 @@ export default function AdminPage() {
                 className="text-primary text-sm font-medium hover:underline">+ Agregar FAQ</button>
             </Modal>
           )}
+
+          {/* Modal Cursos Preview */}
+          {activeModal === 'home-coursespreview' && (
+            <Modal title="Cursos Preview" onClose={closeModal} size="lg">
+              <p className="text-xs text-text-light font-semibold uppercase tracking-wider mb-3">Encabezado de sección</p>
+              <Field label="Etiqueta superior" value={home.coursesPreviewSection.sectionLabel}
+                onChange={(v) => setHome({ ...home, coursesPreviewSection: { ...home.coursesPreviewSection, sectionLabel: v } })} />
+              <Field label="Titular línea 1 (texto claro)" value={home.coursesPreviewSection.heading1}
+                onChange={(v) => setHome({ ...home, coursesPreviewSection: { ...home.coursesPreviewSection, heading1: v } })} />
+              <Field label="Titular línea 2 (texto rojo)" value={home.coursesPreviewSection.heading2}
+                onChange={(v) => setHome({ ...home, coursesPreviewSection: { ...home.coursesPreviewSection, heading2: v } })} />
+              <Field label="Subtítulo (usa \\n para salto de línea)" value={home.coursesPreviewSection.subheading}
+                onChange={(v) => setHome({ ...home, coursesPreviewSection: { ...home.coursesPreviewSection, subheading: v } })} textarea />
+
+              <div className="border-t border-gray-100 my-4" />
+              <p className="text-xs text-text-light font-semibold uppercase tracking-wider mb-3">Tarjetas de idioma</p>
+              <div className="space-y-4">
+                {home.coursesPreview.map((c, i) => (
+                  <div key={c.id} className="border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-text-light uppercase tracking-wider">{c.id === 'ingles' ? '🇺🇸 Inglés' : '🇫🇷 Francés'}</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Título" value={c.title}
+                        onChange={(v) => { const cp = [...home.coursesPreview]; cp[i] = { ...c, title: v }; setHome({ ...home, coursesPreview: cp }); }} />
+                      <Field label="Niveles" value={c.levels}
+                        onChange={(v) => { const cp = [...home.coursesPreview]; cp[i] = { ...c, levels: v }; setHome({ ...home, coursesPreview: cp }); }} />
+                    </div>
+                    <Field label="Tagline (texto en color acento)" value={c.tagline}
+                      onChange={(v) => { const cp = [...home.coursesPreview]; cp[i] = { ...c, tagline: v }; setHome({ ...home, coursesPreview: cp }); }} />
+                    <Field label="Descripción" value={c.description}
+                      onChange={(v) => { const cp = [...home.coursesPreview]; cp[i] = { ...c, description: v }; setHome({ ...home, coursesPreview: cp }); }} textarea />
+                  </div>
+                ))}
+              </div>
+            </Modal>
+          )}
           </>
         )}
 
@@ -481,6 +549,11 @@ export default function AdminPage() {
               <Field label="Región" value={contact.region} onChange={(v) => setContact({ ...contact, region: v })} />
               <Field label="Link a Google Maps" value={contact.mapLink} onChange={(v) => setContact({ ...contact, mapLink: v })} />
               <Field label="Embed mapa (URL iframe)" value={contact.mapEmbed || ''} onChange={(v) => setContact({ ...contact, mapEmbed: v })} />
+              <div className="border-t border-gray-100 pt-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Texto del footer</p>
+                <Field label="Descripción (footer)" value={contact.footerDescription || ''} onChange={(v) => setContact({ ...contact, footerDescription: v })} textarea />
+                <Field label="Licencia (footer)" value={contact.footerLicense || ''} onChange={(v) => setContact({ ...contact, footerLicense: v })} />
+              </div>
             </Modal>
           )}
 
@@ -531,21 +604,64 @@ export default function AdminPage() {
 
           {/* Modal info general */}
           {activeModal === 'yf-info' && (
-            <Modal title="YES Factor — Información general" onClose={closeModal}>
-              <Field label="Título" value={yesFactor.title} onChange={(v) => setYesFactor({ ...yesFactor, title: v })} />
+            <Modal title="YES Factor — Información general" onClose={closeModal} size="lg">
+              {/* Título y descripción */}
+              <Field label="Título del evento" value={yesFactor.title} onChange={(v) => setYesFactor({ ...yesFactor, title: v })} />
               <Field label="Descripción" value={yesFactor.description} onChange={(v) => setYesFactor({ ...yesFactor, description: v })} textarea />
-              <Field label="URL Video (opcional)" value={yesFactor.videoUrl || ''} onChange={(v) => setYesFactor({ ...yesFactor, videoUrl: v })} />
-              <Field label="URL Reglamento (PDF)" value={yesFactor.rulesUrl || ''} onChange={(v) => setYesFactor({ ...yesFactor, rulesUrl: v })} />
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-text-light">Estado de inscripción</label>
-                <select value={yesFactor.registrationStatus}
-                  onChange={(e) => setYesFactor({ ...yesFactor, registrationStatus: e.target.value as 'open' | 'closed' })}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm bg-white">
-                  <option value="open">Abierto</option>
-                  <option value="closed">Cerrado</option>
-                </select>
+
+              {/* Separador — Imágenes */}
+              <div className="border-t border-gray-100 pt-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Imagen de fondo (home + página YES Factor)</p>
+                <p className="text-xs text-text-light mb-4 leading-relaxed">
+                  Si se configura una imagen, reemplaza el degradado en ambas vistas. La imagen se muestra completa sin recortes.<br />
+                  <span className="font-semibold text-gray-500">Desktop:</span> proporción 16:5 recomendada — ej. <span className="font-mono">1200 × 375 px</span> ·{' '}
+                  <span className="font-semibold text-gray-500">Mobile:</span> proporción 4:3 o 1:1 — ej. <span className="font-mono">600 × 450 px</span>
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-gray-600">🖥 Desktop <span className="font-normal text-gray-400">(≥ 768 px) — 1200 × 375 px</span></label>
+                    <ImageUploader
+                      value={yesFactor.backgroundImageDesktop || ''}
+                      onChange={(url) => setYesFactor({ ...yesFactor, backgroundImageDesktop: url })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-gray-600">📱 Mobile <span className="font-normal text-gray-400">(&lt; 768 px) — 600 × 450 px</span></label>
+                    <ImageUploader
+                      value={yesFactor.backgroundImageMobile || ''}
+                      onChange={(url) => setYesFactor({ ...yesFactor, backgroundImageMobile: url })}
+                    />
+                  </div>
+                </div>
               </div>
-              <Field label="URL Formulario / WhatsApp" value={yesFactor.registrationUrl || ''} onChange={(v) => setYesFactor({ ...yesFactor, registrationUrl: v })} />
+
+              {/* Separador — Inscripciones */}
+              <div className="border-t border-gray-100 pt-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Inscripciones</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-text-light">Estado</label>
+                    <select value={yesFactor.registrationStatus}
+                      onChange={(e) => setYesFactor({ ...yesFactor, registrationStatus: e.target.value as 'open' | 'closed' })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm bg-white">
+                      <option value="open">✅ Abiertas</option>
+                      <option value="closed">🔒 Cerradas</option>
+                    </select>
+                  </div>
+                  <Field label="URL formulario de inscripción" value={yesFactor.registrationUrl || ''} onChange={(v) => setYesFactor({ ...yesFactor, registrationUrl: v })} />
+                </div>
+              </div>
+
+              {/* Separador — Recursos */}
+              <div className="border-t border-gray-100 pt-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Recursos</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ImageUploader label="Video del evento" type="video" storagePath="yes-factor-videos"
+                    value={yesFactor.videoUrl || ''} onChange={(v) => setYesFactor({ ...yesFactor, videoUrl: v })} />
+                  <ImageUploader label="Reglamento (PDF)" type="document" storagePath="yes-factor-docs"
+                    value={yesFactor.rulesUrl || ''} onChange={(v) => setYesFactor({ ...yesFactor, rulesUrl: v })} />
+                </div>
+              </div>
             </Modal>
           )}
 
@@ -664,6 +780,7 @@ export default function AdminPage() {
                 if (!db) return;
                 const newPost: BlogPost = { id: Date.now().toString(), slug: `nueva-noticia-${Date.now()}`, title: 'Nueva Noticia', excerpt: 'Resumen...', content: '', date: new Date().toISOString().split('T')[0], author: 'Admin YES', category: 'Institucional', published: false, type: 'noticia' };
                 await setDoc(doc(db, 'blogPosts', newPost.id), newPost);
+                await triggerRevalidate([newPost.slug]);
                 setBlogPosts([newPost, ...blogPosts]);
                 setActiveModal(`blog-${newPost.id}`);
               }} className="text-xs font-bold px-3 py-1.5 rounded-lg border-2 transition-colors" style={{ borderColor: '#ED1118', color: '#ED1118' }}>+ Noticia</button>
@@ -671,6 +788,7 @@ export default function AdminPage() {
                 if (!db) return;
                 const newPost: BlogPost = { id: Date.now().toString(), slug: `nuevo-articulo-${Date.now()}`, title: 'Nuevo Artículo', excerpt: 'Breve resumen...', content: '', date: new Date().toISOString().split('T')[0], author: 'Admin YES', category: 'General', published: false, type: 'blog' };
                 await setDoc(doc(db, 'blogPosts', newPost.id), newPost);
+                await triggerRevalidate([newPost.slug]);
                 setBlogPosts([newPost, ...blogPosts]);
                 setActiveModal(`blog-${newPost.id}`);
               }} className="bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary-dark transition-colors">+ Blog</button>
@@ -717,6 +835,7 @@ export default function AdminPage() {
                           <button onClick={async () => {
                             if (!db || !confirm('¿Eliminar esta entrada?')) return;
                             await deleteDoc(doc(db, 'blogPosts', post.id));
+                            await triggerRevalidate([post.slug]);
                             setBlogPosts(blogPosts.filter(p => p.id !== post.id));
                             if (activeModal === `blog-${post.id}`) closeModal();
                           }} className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors">✕</button>
@@ -761,6 +880,7 @@ export default function AdminPage() {
                       onChange={async (e) => {
                         const posts = [...blogPosts]; posts[i] = { ...post, published: e.target.checked }; setBlogPosts(posts);
                         if (db) await updateDoc(doc(db, 'blogPosts', post.id), { published: e.target.checked });
+                        await triggerRevalidate([post.slug]);
                       }} className="w-4 h-4 accent-primary" />
                     <span className="text-xs font-semibold text-text-light">Publicado</span>
                   </label>
@@ -856,6 +976,11 @@ export default function AdminPage() {
           />
         )}
 
+        {/* ── STORAGE — always mounted so it loads in background for tab badge ── */}
+        <div className={activeTab === 'storage' ? 'bg-white rounded-2xl border border-gray-100 p-6' : 'hidden'}>
+          <StorageMonitor onUsageLoad={setStorageUsageRatio} />
+        </div>
+
         {/* No content loaded */}
         {activeTab === 'home' && !home && (
           <p className="text-text-light text-center py-12">No se encontró contenido de Home en Firestore. Crea el documento siteConfig/home primero.</p>
@@ -875,7 +1000,7 @@ export default function AdminPage() {
         <div className="sticky bottom-4 mt-8">
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-lg flex items-center justify-between">
             {saveMsg && <span className="text-sm">{saveMsg}</span>}
-            {!saveMsg && <span className="text-sm text-text-light">Los cambios se reflejan en ~5 min (ISR)</span>}
+            {!saveMsg && <span className="text-sm text-text-light">Guarda para aplicar cambios en el sitio</span>}
             <button
               onClick={handleSave}
               disabled={saving}
@@ -1056,10 +1181,14 @@ function ProgramsEditor({
                 <input className={fieldCls} value={prog.tag ?? ''} onChange={e => updateProgram(prog.id, { tag: e.target.value })} placeholder="Ej: Intensivo, Sábados, YES Kids, GEP" />
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs font-medium text-text-light mb-1">Duración / Niveles</label>
-                <input className={fieldCls} value={prog.levels ?? ''} onChange={e => updateProgram(prog.id, { levels: e.target.value })} placeholder="Ej: 6 Niveles (Año y Medio)" />
+                <label className="block text-xs font-medium text-text-light mb-1">Niveles</label>
+                <input className={fieldCls} value={prog.levels ?? ''} onChange={e => updateProgram(prog.id, { levels: e.target.value })} placeholder="Ej: A1 – C1" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text-light mb-1">Duración</label>
+                <input className={fieldCls} value={prog.duration ?? ''} onChange={e => updateProgram(prog.id, { duration: e.target.value })} placeholder="Ej: 6 Niveles (Año y Medio)" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-text-light mb-1">Modalidad</label>
@@ -1105,6 +1234,10 @@ function ProgramsEditor({
             <div>
               <label className="block text-xs font-medium text-text-light mb-1">Nota adicional (visible)</label>
               <input className={fieldCls} value={prog.notes ?? ''} onChange={e => updateProgram(prog.id, { notes: e.target.value })} placeholder="Ej: Cupos limitados" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-light mb-1">Enlace "Ver más información" (URL del blog)</label>
+              <input className={fieldCls} value={prog.infoUrl ?? ''} onChange={e => updateProgram(prog.id, { infoUrl: e.target.value })} placeholder="Ej: /blog/cursos-intensivos-ingles" />
             </div>
             <div className="border-t border-dashed border-gray-200 pt-3 space-y-3">
               <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Inversión y material</p>

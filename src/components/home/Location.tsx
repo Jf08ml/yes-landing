@@ -17,7 +17,7 @@ export default function Location({ contact }: LocationProps) {
           Sede en <span className="text-primary">Neiva, Huila</span>
         </h2>
         <p className="text-text-light max-w-2xl mx-auto">
-          Visítanos en nuestras instalaciones modernas en el barrio Quirinal.
+          Visítanos en nuestras instalaciones.
           Atendemos de lunes a sábado.
         </p>
       </div>

@@ -3,41 +3,34 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['admin@yes.edu.co'];
+    }
+
     // siteConfig: public read, admin-only write
     match /siteConfig/{docId} {
       allow read: if true;
-      allow write: if request.auth != null
-        && request.auth.token.email in [
-          'admin@yes.edu.co'
-        ];
+      allow write: if isAdmin();
     }
 
     // leads: anyone can create (via API), only admins can read/update/delete
     match /leads/{leadId} {
       allow create: if true;
-      allow read, update, delete: if request.auth != null
-        && request.auth.token.email in [
-          'admin@yes.edu.co'
-        ];
+      allow read, update, delete: if isAdmin();
     }
 
     // blogPosts: public read, admin-only write
     match /blogPosts/{postId} {
       allow read: if true;
-      allow write: if request.auth != null
-        && request.auth.token.email in [
-          'admin@yes.edu.co'
-        ];
+      allow write: if isAdmin();
     }
 
-    // testimonials: anyone can create (public form), public read testimonials (filtered in client), admins manage all
+    // testimonials: anyone can create (public form), public read, admins manage all
     match /testimonials/{testimonialId} {
       allow create: if true;
-      allow read: if true;  // Public read - filtering by approved is done in client
-      allow update, delete: if request.auth != null
-        && request.auth.token.email in [
-          'admin@yes.edu.co'
-        ];
+      allow read: if true;
+      allow update, delete: if isAdmin();
     }
 
     // Deny everything else

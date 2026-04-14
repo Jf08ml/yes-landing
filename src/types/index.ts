@@ -22,6 +22,7 @@ export interface CoursePreview {
   id: string;
   language: 'ingles' | 'frances';
   title: string;
+  tagline: string;
   description: string;
   levels: string;
   image?: string;
@@ -48,6 +49,12 @@ export interface HomeContent {
   stats: Stat[];
   trustBar: string[];
   features: Feature[];
+  coursesPreviewSection: {
+    sectionLabel: string;
+    heading1: string;
+    heading2: string;
+    subheading: string;
+  };
   coursesPreview: CoursePreview[];
   faq: FAQItem[];
   yesFactorPreview: {
@@ -80,6 +87,8 @@ export interface YESFactorWinner {
 export interface YESFactorContent {
   title: string;
   description: string;
+  backgroundImageDesktop?: string; // imagen de fondo desktop (≥ 768 px)
+  backgroundImageMobile?: string;  // imagen de fondo mobile (< 768 px)
   videoUrl?: string;
   winners: YESFactorWinner[];
   rulesUrl?: string;
@@ -109,7 +118,8 @@ export interface Program {
   subtitle?: string;      // audience: "Jóvenes-Adultos", "5-11 años"
   language: 'ingles' | 'frances' | 'ambos';
   tag?: string;           // "Intensivo", "Sábados", "Viernes", "YES Kids", "GEP"
-  levels?: string;        // "6 Niveles (Año y Medio)"
+  levels?: string;        // "A1 – C1"
+  duration?: string;      // "6 Niveles (Año y Medio)"
   modality?: string;      // "Virtual y/o Presencial Trimestral"
   intensity?: string;     // "110 horas por nivel"
   schedules: string[];
@@ -119,6 +129,7 @@ export interface Program {
   price?: string;
   showPrice?: boolean;     // si true, se muestra en el sitio
   notes?: string;
+  infoUrl?: string;       // enlace a blog post con más detalle del programa
   order: number;
   active: boolean;
 }
@@ -141,6 +152,8 @@ export interface ContactContent {
   phone: string;
   email: string;
   address: string;
+  footerDescription?: string;
+  footerLicense?: string;
   neighborhood?: string;
   city: string;
   region: string;

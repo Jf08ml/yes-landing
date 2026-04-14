@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc:*)",
-      "Bash(node -e \"const w = require\\('world-atlas/countries-110m.json'\\); console.log\\(Object.keys\\(w\\), Object.keys\\(w.objects\\)\\)\")"
+      "Bash(node -e \"const w = require\\('world-atlas/countries-110m.json'\\); console.log\\(Object.keys\\(w\\), Object.keys\\(w.objects\\)\\)\")",
+      "Bash(ls d:/proyectos-personales/yes-landing/.env*)",
+      "Bash(openssl rand:*)",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(24\\).toString\\('hex'\\)\\)\")",
+      "Bash(ls \"d:\\\\proyectos-personales\\\\yes-landing\"/*.rules)",
+      "Bash(ls \"d:\\\\proyectos-personales\\\\yes-landing\"/.env*)"
     ]
   }
 }

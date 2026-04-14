@@ -4,6 +4,7 @@ import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { GraduationCap, Phone } from 'lucide-react';
 import type { BlogPost } from '@/types';
 
 // Lazy-loaded WebGL background — skipped on SSR to avoid canvas/WebGL issues
@@ -113,7 +114,7 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                     />
                   )}
                   <span className="relative text-sm font-semibold" style={{ color: BLUE }}>
-                    🎓 Más de 32 años formando profesionales bilingües en Neiva
+                    <GraduationCap className="inline w-4 h-4 mr-1.5 text-yellow-500 shrink-0" />Más de 32 años formando profesionales bilingües en Neiva
                   </span>
                 </motion.div>
               </div>
@@ -178,7 +179,7 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                       transition={{ duration: 2.9, repeat: Infinity, ease: 'easeInOut' }}
                     />
                   )}
-                  <span className="relative">📞 {hero.ctaText}</span>
+                  <span className="relative flex items-center gap-2"><Phone className="w-4 h-4" />{hero.ctaText}</span>
                 </motion.a>
 
                 <motion.a
@@ -206,8 +207,8 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.9, duration: 0.6 }}
-                className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"
-                style={{ color: '#4B5563' }}
+                className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-md"
+                style={{ color: '#000000' }}
               >
                 <span className="inline-flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: RED }} />
@@ -389,7 +390,7 @@ export default function Hero({ hero, noticias = [], whatsapp }: HeroProps) {
                   />
                 )}
                 <span className="relative text-sm font-semibold" style={{ color: BLUE }}>
-                  🎓 Más de 32 años formando profesionales bilingües en Neiva
+                  <GraduationCap className="inline w-4 h-4 mr-1.5 text-yellow-500 shrink-0" />Más de 32 años formando profesionales bilingües en Neiva
                 </span>
               </motion.div>
             </div>

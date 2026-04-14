@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { fetchHomeContent, fetchContactContent, fetchBlogPosts, fetchNoticias } from '@/lib/content';
+import { fetchHomeContent, fetchContactContent, fetchBlogPosts, fetchNoticias, fetchYESFactorContent } from '@/lib/content';
 import { buildLocalBusinessJsonLd, buildFAQJsonLd, buildCourseJsonLd } from '@/lib/seo';
 import Hero from '@/components/home/Hero';
 import TrustBar from '@/components/home/TrustBar';
@@ -27,11 +27,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [home, contact, blogPosts, noticias] = await Promise.all([
+  const [home, contact, blogPosts, noticias, yesFactor] = await Promise.all([
     fetchHomeContent(),
     fetchContactContent(),
     fetchBlogPosts(),
     fetchNoticias(),
+    fetchYESFactorContent(),
   ]);
 
   const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || contact.whatsapp || '573133973411';
@@ -75,10 +76,10 @@ export default async function HomePage() {
       />
       <TrustBar trustItems={home.trustBar} stats={home.stats} />
       <Features features={home.features} />
-      <CoursesPreview />
+      <CoursesPreview section={home.coursesPreviewSection} courses={home.coursesPreview} />
       <Location contact={contact} />
       <Testimonials />
-      <YESFactorSection preview={home.yesFactorPreview} />
+      <YESFactorSection preview={home.yesFactorPreview} backgroundImageDesktop={yesFactor.backgroundImageDesktop} backgroundImageMobile={yesFactor.backgroundImageMobile} />
       <BlogPreview posts={blogPosts} />
       <FAQ faq={home.faq} />
       <CTAFinal

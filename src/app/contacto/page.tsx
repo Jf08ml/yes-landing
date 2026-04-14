@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { fetchContactContent } from '@/lib/content';
 import Section from '@/components/ui/Section';
+import { MapPin, Phone, Mail, Clock, MessageCircle } from 'lucide-react';
 
 export const revalidate = 300;
 
@@ -44,7 +45,7 @@ export default async function ContactPage() {
 
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <span className="text-xl mt-0.5">📍</span>
+                <MapPin className="w-5 h-5 mt-0.5 shrink-0 text-red-500" />
                 <div>
                   <p className="font-semibold text-text">Dirección</p>
                   <p className="text-text-light text-sm">
@@ -55,7 +56,7 @@ export default async function ContactPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <span className="text-xl mt-0.5">📞</span>
+                <Phone className="w-5 h-5 mt-0.5 shrink-0 text-green-600" />
                 <div>
                   <p className="font-semibold text-text">Teléfono</p>
                   <p className="text-text-light text-sm">{contact.phone}</p>
@@ -63,7 +64,7 @@ export default async function ContactPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <span className="text-xl mt-0.5">✉️</span>
+                <Mail className="w-5 h-5 mt-0.5 shrink-0 text-blue-500" />
                 <div>
                   <p className="font-semibold text-text">Email</p>
                   <a href={`mailto:${contact.email}`} className="text-primary text-sm hover:underline">
@@ -73,7 +74,7 @@ export default async function ContactPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <span className="text-xl mt-0.5">🕐</span>
+                <Clock className="w-5 h-5 mt-0.5 shrink-0 text-yellow-500" />
                 <div>
                   <p className="font-semibold text-text">Horarios</p>
                   {contact.openingHours.map((oh, i) => (
@@ -91,18 +92,18 @@ export default async function ContactPage() {
                 href={waLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 text-center bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-4 rounded-xl text-lg transition-all hover:scale-105 shadow-lg"
+                className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-4 rounded-xl text-lg transition-all hover:scale-105 shadow-lg"
               >
-                💬 Escríbenos por WhatsApp
+                <MessageCircle className="w-5 h-5" /> Escríbenos por WhatsApp
               </a>
               {contact.mapLink && (
                 <a
                   href={contact.mapLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 text-center bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-3 rounded-xl transition-colors"
                 >
-                  📍 Cómo llegar
+                  <MapPin className="w-4 h-4" /> Cómo llegar
                 </a>
               )}
             </div>
