@@ -103,9 +103,9 @@ export default function Header({ paymentsUrl, social = [] }: HeaderProps) {
               <Image
                 src="/fav.png"
                 alt="YES Institute"
-                width={90}
-                height={90}
-                className={`relative transition-all duration-300 ${scrolled ? 'w-[60px] h-[60px]' : 'w-[90px] h-[90px]'}`}
+                width={110}
+                height={110}
+  
               />
             </Link>
 

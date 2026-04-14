@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import { fetchHomeContent, fetchContactContent, fetchBlogPosts, fetchNoticias, fetchYESFactorContent } from '@/lib/content';
 import { buildLocalBusinessJsonLd, buildFAQJsonLd, buildCourseJsonLd } from '@/lib/seo';
 import Hero from '@/components/home/Hero';
@@ -6,11 +7,13 @@ import TrustBar from '@/components/home/TrustBar';
 import Features from '@/components/home/Features';
 import CoursesPreview from '@/components/home/CoursesPreview';
 import Location from '@/components/home/Location';
-import Testimonials from '@/components/home/Testimonials';
 import FAQ from '@/components/home/FAQ';
 import CTAFinal from '@/components/home/CTAFinal';
 import YESFactorSection from '@/components/home/YESFactorSection';
 import BlogPreview from '@/components/home/BlogPreview';
+
+// Testimonials: separate JS chunk — loads after the page is interactive
+const Testimonials = dynamic(() => import('@/components/home/Testimonials'));
 
 export const revalidate = 300;
 

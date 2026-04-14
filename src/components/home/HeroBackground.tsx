@@ -27,7 +27,7 @@ const auroraFrag = /* glsl */ `
   }
   float fbm(vec2 p) {
     float v=0.0,a=0.5;
-    for(int i=0;i<5;i++){v+=a*vnoise(p);p=p*2.1+vec2(1.7,9.2);a*=0.5;}
+    for(int i=0;i<3;i++){v+=a*vnoise(p);p=p*2.1+vec2(1.7,9.2);a*=0.5;}
     return v;
   }
   void main() {
@@ -330,13 +330,13 @@ function GlobeScene() {
 
       {/* Océano — tinte muy suave para dar profundidad sin tapar la aurora */}
       <mesh renderOrder={1}>
-        <sphereGeometry args={[GLOBE_R, 48, 32]} />
+        <sphereGeometry args={[GLOBE_R, 32, 20]} />
         <meshBasicMaterial color="#1A3A6A" transparent opacity={0.18} depthTest={false} />
       </mesh>
 
       {/* Atmósfera — halo fino en el borde, FrontSide */}
       <mesh renderOrder={2}>
-        <sphereGeometry args={[GLOBE_R + 0.08, 40, 20]} />
+        <sphereGeometry args={[GLOBE_R + 0.08, 28, 14]} />
         <shaderMaterial
           vertexShader={atmVert}
           fragmentShader={atmFrag}

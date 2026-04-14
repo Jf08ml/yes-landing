@@ -1,5 +1,3 @@
-'use client';
-
 import Section from '@/components/ui/Section';
 import type { ContactContent } from '@/types';
 

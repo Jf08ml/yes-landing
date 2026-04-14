@@ -22,7 +22,7 @@ function FlagPlane({ textureUrl }: { textureUrl: string }) {
       ref={meshRef}
       scale={[aspect * 3, 3, 1]}
     >
-      <planeGeometry args={[1, 1, 180, 180]} />
+      <planeGeometry args={[1, 1, 64, 40]} />
       <shaderMaterial
         uniforms={{
           uTexture: { value: texture },
@@ -80,7 +80,11 @@ function FlagPlane({ textureUrl }: { textureUrl: string }) {
 const FlagShaderBg = memo(function FlagShaderBg({ src }: { src: string }) {
   return (
     <div className="absolute inset-0 z-0 opacity-[0.55] pointer-events-none">
-      <Canvas camera={{ position: [0, 0, 4], fov: 45 }} gl={{ alpha: true }}>
+      <Canvas
+        camera={{ position: [0, 0, 4], fov: 45 }}
+        dpr={1}
+        gl={{ alpha: true, antialias: false }}
+      >
         <ambientLight intensity={1} />
         <FlagPlane textureUrl={src} />
       </Canvas>
