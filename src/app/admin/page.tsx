@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { MessageCircle, GraduationCap, Users, Calendar, Building2 } from 'lucide-react';
 import {
   signInWithEmailAndPassword,
   onAuthStateChanged,
@@ -439,10 +440,11 @@ export default function AdminPage() {
                   <div key={i} className="border border-gray-200 rounded-xl p-4 space-y-3 relative">
                     <button onClick={() => setHome({ ...home, features: home.features.filter((_, j) => j !== i) })}
                       className="absolute top-3 right-3 text-red-400 hover:text-red-600 text-xs font-bold">✕</button>
-                    <div className="grid grid-cols-4 gap-3 pr-6">
-                      <Field label="Ícono" value={f.icon} onChange={(v) => { const features = [...home.features]; features[i] = { ...f, icon: v }; setHome({ ...home, features }); }} />
-                      <div className="col-span-3"><Field label="Título" value={f.title} onChange={(v) => { const features = [...home.features]; features[i] = { ...f, title: v }; setHome({ ...home, features }); }} /></div>
+                    <div className="pr-6">
+                      <label className="block text-xs font-medium text-text-light mb-2">Ícono</label>
+                      <IconPicker value={f.icon} onChange={(v) => { const features = [...home.features]; features[i] = { ...f, icon: v }; setHome({ ...home, features }); }} />
                     </div>
+                    <Field label="Título" value={f.title} onChange={(v) => { const features = [...home.features]; features[i] = { ...f, title: v }; setHome({ ...home, features }); }} />
                     <Field label="Descripción" value={f.description} onChange={(v) => { const features = [...home.features]; features[i] = { ...f, description: v }; setHome({ ...home, features }); }} textarea />
                   </div>
                 ))}
@@ -549,6 +551,23 @@ export default function AdminPage() {
               <Field label="Región" value={contact.region} onChange={(v) => setContact({ ...contact, region: v })} />
               <Field label="Link a Google Maps" value={contact.mapLink} onChange={(v) => setContact({ ...contact, mapLink: v })} />
               <Field label="Embed mapa (URL iframe)" value={contact.mapEmbed || ''} onChange={(v) => setContact({ ...contact, mapEmbed: v })} />
+              <div className="border-t border-gray-100 pt-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Horarios de atención</p>
+                <div className="space-y-3">
+                  {contact.openingHours.map((oh, i) => (
+                    <div key={i} className="border border-gray-200 rounded-xl p-3 space-y-2 relative">
+                      <button onClick={() => setContact({ ...contact, openingHours: contact.openingHours.filter((_, idx) => idx !== i) })}
+                        className="absolute top-2.5 right-3 text-red-400 hover:text-red-600 text-sm font-bold">✕</button>
+                      <div className="pr-6">
+                        <Field label="Días" value={oh.days} onChange={(v) => { const h = [...contact.openingHours]; h[i] = { ...oh, days: v }; setContact({ ...contact, openingHours: h }); }} />
+                        <Field label="Horario" value={oh.hours} onChange={(v) => { const h = [...contact.openingHours]; h[i] = { ...oh, hours: v }; setContact({ ...contact, openingHours: h }); }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setContact({ ...contact, openingHours: [...contact.openingHours, { days: '', hours: '' }] })}
+                  className="text-primary text-sm font-medium hover:underline mt-2">+ Añadir horario</button>
+              </div>
               <div className="border-t border-gray-100 pt-4">
                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Texto del footer</p>
                 <Field label="Descripción (footer)" value={contact.footerDescription || ''} onChange={(v) => setContact({ ...contact, footerDescription: v })} textarea />
@@ -1528,6 +1547,82 @@ function TestimonialsTab({
 }
 
 // ── Helper components ──
+
+const FEATURE_ICON_MAP: Record<string, { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; color: string; label: string }> = {
+  '🗣️': { icon: MessageCircle, color: 'text-blue-500',   label: 'Conversación'   },
+  '🎓':  { icon: GraduationCap, color: 'text-yellow-500', label: 'Graduación'      },
+  '👨‍🏫': { icon: Users,         color: 'text-teal-500',   label: 'Profesores'      },
+  '📅':  { icon: Calendar,      color: 'text-orange-500', label: 'Horarios'        },
+  '🏛️': { icon: Building2,     color: 'text-indigo-500', label: 'Instalaciones'   },
+};
+
+const FEATURE_EXTRA_EMOJIS = ['⭐', '🌐', '📚', '🏆', '💡', '🤝', '✅', '🚀', '🎯', '🔥', '🌟', '📖'];
+
+function IconPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const mapped = FEATURE_ICON_MAP[value];
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-primary bg-white transition-colors text-sm w-full"
+      >
+        <span className="flex items-center justify-center w-6 h-6 shrink-0">
+          {mapped
+            ? <mapped.icon className={`w-5 h-5 ${mapped.color}`} strokeWidth={1.8} />
+            : <span className="text-lg leading-none">{value}</span>}
+        </span>
+        <span className="text-text-light text-xs truncate flex-1 text-left">
+          {mapped ? mapped.label : value || 'Seleccionar…'}
+        </span>
+        <svg className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-xl p-4 space-y-4 w-72">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Íconos SVG — se ven así en el sitio</p>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(FEATURE_ICON_MAP).map(([emoji, { icon: Icon, color, label }]) => (
+                  <button key={emoji} type="button" title={label}
+                    onClick={() => { onChange(emoji); setOpen(false); }}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all w-[52px] ${value === emoji ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
+                    <Icon className={`w-5 h-5 ${color}`} strokeWidth={1.8} />
+                    <span className="text-[8px] text-text-light leading-tight text-center">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Emojis</p>
+              <div className="flex flex-wrap gap-1.5">
+                {FEATURE_EXTRA_EMOJIS.map((emoji) => (
+                  <button key={emoji} type="button"
+                    onClick={() => { onChange(emoji); setOpen(false); }}
+                    className={`p-1.5 rounded-lg border-2 text-lg leading-none transition-all ${value === emoji ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Personalizado</p>
+              <input type="text" value={value} onChange={(e) => onChange(e.target.value)}
+                placeholder="Escribe un emoji…"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm text-center" />
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function Modal({
   title,
