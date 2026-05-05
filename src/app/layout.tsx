@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/next';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import WhatsAppFloat from '@/components/ui/WhatsAppFloat';
@@ -91,7 +90,6 @@ export default async function RootLayout({
         <main className="flex-1">{children}</main>
         <Footer />
         <WhatsAppFloat whatsapp={contact.whatsapp} />
-        <Analytics />
       </body>
     </html>
   );
