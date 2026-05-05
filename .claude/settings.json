@@ -7,7 +7,9 @@
       "Bash(openssl rand:*)",
       "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(24\\).toString\\('hex'\\)\\)\")",
       "Bash(ls \"d:\\\\proyectos-personales\\\\yes-landing\"/*.rules)",
-      "Bash(ls \"d:\\\\proyectos-personales\\\\yes-landing\"/.env*)"
+      "Bash(ls \"d:\\\\proyectos-personales\\\\yes-landing\"/.env*)",
+      "Bash(pip install *)",
+      "PowerShell(python \"d:\\\\proyectos-personales\\\\yes-landing\\\\gen_doc.py\")"
     ]
   }
 }
