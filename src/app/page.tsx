@@ -38,7 +38,7 @@ export default async function HomePage() {
     fetchYESFactorContent(),
   ]);
 
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || contact.whatsapp || '573133973411';
+  const whatsapp = contact.whatsapp || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573133973411';
 
   const localBusinessJsonLd = buildLocalBusinessJsonLd(contact);
   const faqJsonLd = buildFAQJsonLd(home.faq);

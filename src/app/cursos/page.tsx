@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { fetchCoursesContent, fetchPrograms } from '@/lib/content';
+import { fetchCoursesContent, fetchPrograms, fetchContactContent } from '@/lib/content';
 import ProgramsGrid from '@/components/courses/ProgramsGrid';
 
 export const revalidate = 300;
@@ -17,12 +17,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CoursesPage() {
-  const [data, programs] = await Promise.all([
+  const [data, programs, contact] = await Promise.all([
     fetchCoursesContent(),
     fetchPrograms(),
+    fetchContactContent(),
   ]);
 
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573133973411';
+  const whatsapp = contact.whatsapp || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573133973411';
   const waLink = `https://wa.me/${whatsapp}?text=${encodeURIComponent('Hola, quiero información sobre los cursos de YES Institute')}`;
 
   return (

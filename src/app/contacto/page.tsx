@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ContactPage() {
   const contact = await fetchContactContent();
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || contact.whatsapp;
+  const whatsapp = contact.whatsapp || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
   const waLink = `https://wa.me/${whatsapp}?text=${encodeURIComponent('Hola, quiero información sobre los cursos de YES Institute')}`;
 
   return (

@@ -22,7 +22,7 @@ export default async function YESFactorPage() {
     fetchContactContent(),
   ]);
 
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || contact.whatsapp;
+  const whatsapp = contact.whatsapp || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
   const waLink = `https://wa.me/${whatsapp}?text=${encodeURIComponent('Hola, quiero inscribirme en el próximo YES Factor')}`;
 
   return (
