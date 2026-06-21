@@ -7,6 +7,16 @@ import Section from '@/components/ui/Section';
 
 export const revalidate = 300;
 
+/**
+ * Detecta si la URL apunta a un archivo de video directo (mp4, webm, etc.)
+ * frente a un embed (YouTube, Vimeo, iframe). Ignora el query string para
+ * soportar URLs de Firebase Storage que llevan tokens (`?alt=media&token=…`).
+ */
+function isDirectVideoFile(url: string): boolean {
+  const path = url.split('?')[0].toLowerCase();
+  return /\.(mp4|webm|ogg|ogv|mov|m4v)$/.test(path);
+}
+
 // Dynamic routes for build time
 export async function generateStaticParams() {
   const posts = await fetchBlogPosts();
@@ -76,18 +86,29 @@ export default async function BlogPostPage({ params }: PageProps) {
         <div className="max-w-6xl mx-auto px-4 mb-16">
           <div className="aspect-[16/9] relative rounded-3xl overflow-hidden shadow-2xl bg-black">
             {post.coverType === 'video' && post.coverVideo ? (
-              <iframe
-                src={
-                  post.coverVideo.includes('youtube.com/watch')
-                    ? `https://www.youtube.com/embed/${new URLSearchParams(post.coverVideo.split('?')[1]).get('v')}`
-                    : post.coverVideo.includes('youtu.be')
-                      ? `https://www.youtube.com/embed/${post.coverVideo.split('/').pop()}`
-                      : post.coverVideo
-                }
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+              isDirectVideoFile(post.coverVideo) ? (
+                // Archivo de video directo → reproductor con sonido (no muteado)
+                <video
+                  src={post.coverVideo}
+                  className="w-full h-full object-cover"
+                  controls
+                  playsInline
+                  preload="metadata"
+                />
+              ) : (
+                <iframe
+                  src={
+                    post.coverVideo.includes('youtube.com/watch')
+                      ? `https://www.youtube.com/embed/${new URLSearchParams(post.coverVideo.split('?')[1]).get('v')}`
+                      : post.coverVideo.includes('youtu.be')
+                        ? `https://www.youtube.com/embed/${post.coverVideo.split('/').pop()}`
+                        : post.coverVideo
+                  }
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              )
             ) : post.coverImage ? (
               <Image
                 src={post.coverImage}

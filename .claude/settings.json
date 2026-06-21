@@ -10,7 +10,8 @@
       "Bash(ls \"d:\\\\proyectos-personales\\\\yes-landing\"/.env*)",
       "Bash(pip install *)",
       "PowerShell(python \"d:\\\\proyectos-personales\\\\yes-landing\\\\gen_doc.py\")",
-      "PowerShell(Copy-Item \"d:\\\\proyectos-personales\\\\yes-landing\\\\public\\\\fav.png\" \"d:\\\\proyectos-personales\\\\yes-landing\\\\src\\\\app\\\\icon.png\")"
+      "PowerShell(Copy-Item \"d:\\\\proyectos-personales\\\\yes-landing\\\\public\\\\fav.png\" \"d:\\\\proyectos-personales\\\\yes-landing\\\\src\\\\app\\\\icon.png\")",
+      "PowerShell(npm run lint)"
     ]
   }
 }

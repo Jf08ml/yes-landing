@@ -64,31 +64,24 @@ export default function PostCover({
       );
     }
 
-    // Direct video file → <video> preview
+    // Direct video file → reproductor real con sonido.
+    // Detiene la propagación del clic para que los controles del video no
+    // disparen la navegación del <Link> que envuelve la portada.
     return (
-      <div className={className}>
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <div
+        className={className}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+      >
         <video
           src={coverVideo}
-          className={`w-full h-full object-cover ${scaleClass}`}
-          muted
-          autoPlay
-          loop
+          className="w-full h-full object-cover"
+          controls
           playsInline
           preload="metadata"
         />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
-          <span className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-xl">
-            <svg
-              className="w-6 h-6 ml-0.5"
-              style={{ color: '#ED1118' }}
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </span>
-        </div>
       </div>
     );
   }
