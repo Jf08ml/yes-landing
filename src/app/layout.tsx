@@ -95,7 +95,7 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col antialiased">
-        <Header paymentsUrl={contact.paymentsUrl} social={contact.social} />
+        <Header paymentsUrl={contact.paymentsUrl} placementTestUrl={contact.placementTestUrl} social={contact.social} />
         <main className="flex-1">{children}</main>
         <Footer />
         <WhatsAppFloat whatsapp={contact.whatsapp} />

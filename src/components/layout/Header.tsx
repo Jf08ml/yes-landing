@@ -59,10 +59,11 @@ function SocialIcon({ platform }: { platform: string }) {
 
 interface HeaderProps {
   paymentsUrl?: string;
+  placementTestUrl?: string;
   social?: SocialLink[];
 }
 
-export default function Header({ paymentsUrl, social = [] }: HeaderProps) {
+export default function Header({ paymentsUrl, placementTestUrl, social = [] }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
@@ -172,8 +173,24 @@ export default function Header({ paymentsUrl, social = [] }: HeaderProps) {
               )}
 
               {/* Divider */}
-              {social.length > 0 && paymentsUrl && (
+              {social.length > 0 && (placementTestUrl || paymentsUrl) && (
                 <div className="w-px h-5 bg-gray-200" />
+              )}
+
+              {/* Placement Test */}
+              {placementTestUrl && (
+                <a
+                  href={placementTestUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-bold tracking-[0.08em] uppercase transition-colors duration-200"
+                  style={{ border: `1.5px solid ${BLUE}`, color: BLUE }}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Placement Test
+                </a>
               )}
 
               {/* Pagos en línea */}
@@ -297,6 +314,21 @@ export default function Header({ paymentsUrl, social = [] }: HeaderProps) {
                     </a>
                   ))}
                 </div>
+              )}
+
+              {placementTestUrl && (
+                <a
+                  href={placementTestUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold tracking-wide"
+                  style={{ border: `1.5px solid ${BLUE}`, color: BLUE }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Placement Test
+                </a>
               )}
 
               {paymentsUrl && (

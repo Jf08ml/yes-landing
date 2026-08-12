@@ -149,6 +149,7 @@ export interface SocialLink {
 export interface ContactContent {
   whatsapp: string;
   paymentsUrl?: string;
+  placementTestUrl?: string;
   phone: string;
   email: string;
   address: string;

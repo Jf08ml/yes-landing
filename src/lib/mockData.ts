@@ -140,6 +140,7 @@ export const mockPrograms: Program[] = [];
 export const mockContact: ContactContent = {
   whatsapp: '573133973411',
   paymentsUrl: 'https://www.mipagoamigo.com/MPA_WebSite/ServicePayments/StartPayment?id=4298&searchedCategoryId=&searchedAgreementName=YES%20LTDA%20YOUR%20E',
+  placementTestUrl: 'https://www.ef.com.co/gocampaign/efset-v2/coa_efset_90_institutoyes_ago26/?utm_source=school-activities&utm_medium=referral&utm_content=SCUCO_SCH_Off_EFSET_90_INSTITUTOYES_AGO26',
   phone: '+57 313 3973411',
   email: 'contactenos@yes.edu.co',
   address: 'Carrera 7 con Calle 17A, esquina, Barrio Quirinal',

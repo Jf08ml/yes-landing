@@ -544,6 +544,7 @@ export default function AdminPage() {
             <Modal title="Datos de contacto" onClose={closeModal} size="md">
               <Field label="WhatsApp" value={contact.whatsapp} onChange={(v) => setContact({ ...contact, whatsapp: v })} />
               <Field label="URL Pagos en línea" value={contact.paymentsUrl || ''} onChange={(v) => setContact({ ...contact, paymentsUrl: v })} />
+              <Field label="URL Placement Test" value={contact.placementTestUrl || ''} onChange={(v) => setContact({ ...contact, placementTestUrl: v })} />
               <Field label="Teléfono" value={contact.phone} onChange={(v) => setContact({ ...contact, phone: v })} />
               <Field label="Email" value={contact.email} onChange={(v) => setContact({ ...contact, email: v })} />
               <Field label="Dirección" value={contact.address} onChange={(v) => setContact({ ...contact, address: v })} />
